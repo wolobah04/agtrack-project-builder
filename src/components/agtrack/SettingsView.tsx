@@ -16,7 +16,7 @@ export function SettingsView({ farm = true }: { farm?: boolean }) {
   const s = useSession(); const [p, setP] = useState({ name: "", county: "", farm_type: "" }); const [pw, setPw] = useState({ cur: "", next: "" }); const [busy, setBusy] = useState("");
   useEffect(() => { if (s) setP({ name: s.user.name, county: s.user.county, farm_type: s.user.farm_type }); }, [s]);
   const save = async () => { if (p.name.trim().length < 2) { toast.error("Enter your name"); return; } setBusy("p"); try { updateSessionUser(await api.auth.updateMe({ ...p, name: p.name.trim() })); toast.success("Profile saved"); } catch (x) { toast.error((x as Error).message); } setBusy(""); };
-  const change = async () => { if (pw.next.length < 6) { toast.error("New password needs 6+ characters"); return; } setBusy("w"); try { await api.auth.changePassword(pw.cur, pw.next); setPw({ cur: "", next: "" }); toast.success("Password changed"); } catch (x) { toast.error((x as Error).message); } setBusy(""); };
+  const change = async () => { if (pw.next.length < 8) { toast.error("New password needs 8+ characters"); return; } setBusy("w"); try { await api.auth.changePassword(pw.cur, pw.next); setPw({ cur: "", next: "" }); toast.success("Password changed"); } catch (x) { toast.error((x as Error).message); } setBusy(""); };
   return (
     <>
       <PageHeader title="Settings" />

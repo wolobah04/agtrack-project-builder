@@ -29,7 +29,7 @@ function Mgmt() {
           <Button size="icon" variant="ghost" aria-label={r.active ? "Deactivate" : "Activate"} onClick={async () => { await api.users.update(r.id, { active: !r.active }); toast.success(r.active ? "Deactivated" : "Activated"); refresh(); }}>{r.active ? <Ban /> : <CheckCircle2 />}</Button>
           <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => { if (confirm(`Delete ${r.name}?`)) { await api.users.remove(r.id); toast.success("Deleted"); refresh(); } }}><Trash2 /></Button></div> }]} /></Panel>
       <FormDialog open={dlg.open} onOpenChange={dlg.setOpen} title="Create Ministry admin" fields={[{ name: "name", label: "Name" }, { name: "phone", label: "Phone (+231…)" }, { name: "password", label: "Temporary password" }]} initial={{ phone: "+231" }}
-        onSubmit={async (v) => { const phone = normalizePhone(v["phone"]!); if (!LIBERIA_PHONE.test(phone)) throw new Error("Enter a valid +231 phone number"); if (v["password"]!.length < 6) throw new Error("Password needs 6+ characters");
+        onSubmit={async (v) => { const phone = normalizePhone(v["phone"]!); if (!LIBERIA_PHONE.test(phone)) throw new Error("Enter a valid +231 phone number"); if (v["password"]!.length < 8) throw new Error("Password needs 8+ characters");
           await api.users.createAdmin({ name: v["name"]!.trim(), phone, password: v["password"]! }); setTab("admin"); refresh(); }} />
     </>
   );

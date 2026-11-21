@@ -15,7 +15,7 @@ export const registerSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(80),
   county: z.string().min(1, "Choose your county"),
   farm_type: z.string().min(1, "Choose a farm type"),
-  password: z.string().min(6, "Use at least 6 characters").max(72),
+  password: z.string().min(8, "Use at least 8 characters").max(72),
 });
 
 export function RegisterForm({ role, agentId, submitLabel = "Create account", onDone }: { role: Role; agentId?: string; submitLabel?: string; onDone: (u: User, password: string) => void }) {

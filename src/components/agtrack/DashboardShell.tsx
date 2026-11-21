@@ -5,8 +5,8 @@ import { LogOut, Menu, Settings, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
-import { clearSession } from "@/lib/auth";
 import { USE_MOCK } from "@/lib/api";
+import { appwriteLogout } from "@/lib/appwrite";
 import { cn } from "@/lib/utils";
 
 export interface NavItem { to: string; label: string; icon: LucideIcon; exact?: boolean }
@@ -15,7 +15,7 @@ export function DashboardShell({ nav, settingsTo, topbar, children }: { nav: Nav
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate(); const qc = useQueryClient();
-  const signOut = async () => { await qc.cancelQueries(); qc.clear(); clearSession(); navigate({ to: "/login", replace: true }); };
+  const signOut = async () => { await qc.cancelQueries(); qc.clear(); await appwriteLogout(); navigate({ to: "/login", replace: true }); };
   const active = (i: NavItem) => (i.exact ? path === i.to || path === i.to + "/" : path.startsWith(i.to));
   const item = (i: NavItem) => (
     <Link key={i.to} to={i.to} onClick={() => setOpen(false)}

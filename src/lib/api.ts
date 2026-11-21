@@ -1,14 +1,15 @@
 /**
- * Typed AgTrack API client. The REST API is the source of truth.
- * Set VITE_API_BASE_URL to use the real backend; without it (or with VITE_USE_MOCK=true)
- * the client uses realistic mock data stored in the browser so the UI stays demonstrable.
+ * Typed AgTrack API client. Appwrite is preferred when configured.
+ * Set VITE_USE_MOCK=true for browser-only demo data, or remove the Appwrite
+ * project ID and set VITE_API_BASE_URL to use the legacy REST backend.
  */
 import { clearSession, getSession } from "./auth";
+import { appwriteApi, USE_APPWRITE } from "./appwrite";
 import { batchCode, db, save, uid, type MockDB } from "./mock-db";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 
 const BASE = (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "");
-export const USE_MOCK = !BASE || import.meta.env["VITE_USE_MOCK"] === "true";
+export const USE_MOCK = !USE_APPWRITE && (!BASE || import.meta.env["VITE_USE_MOCK"] === "true");
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
 export class ApiError extends Error { constructor(message: string, public status = 400) { super(message); } }
@@ -62,7 +63,7 @@ function resource<T extends { id: string; farmer_id: string }>(path: string, tab
   };
 }
 
-export const api = {
+const restApi = {
   harvests: {
     ...resource<Harvest>("/harvests", "harvests"),
     /** Creates a harvest with a fresh batch code and its first trace stage. */
@@ -162,3 +163,6 @@ export const api = {
     await wait(); const D = db(); return { users: D.users, harvests: D.harvests, losses: D.losses, traces: D.traces, expenses: D.expenses };
   },
 };
+
+/** Appwrite is preferred when configured; the previous REST API and browser demo remain fallbacks. */
+export const api = (USE_APPWRITE ? appwriteApi : restApi) as unknown as typeof restApi;

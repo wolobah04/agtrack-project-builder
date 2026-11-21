@@ -30,7 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Architecture
-- All farm data goes through `src/lib/api.ts`; it calls the REST API when `VITE_API_BASE_URL` is set and uses the localStorage mock in `src/lib/mock-db.ts` otherwise, so the UI works without a backend.
+- All farm data goes through `src/lib/api.ts`; Appwrite is preferred when `VITE_APPWRITE_PROJECT_ID` is set, with the previous REST API and localStorage mock as fallbacks. Appwrite table creation is idempotently handled by `scripts/setup-appwrite.mjs`, and privileged data access stays in `src/lib/appwrite.functions.ts` so the API key never reaches the browser.
 - Sessions are kept in localStorage (`src/lib/auth.ts`); role areas `/farmer`, `/agent`, `/admin` are `ssr: false` layouts guarded by `requireRole` because the server cannot read the session.
 - Quality score logic lives only in `src/lib/score.ts` (tested in `score.test.ts`) so the UI formula and the calculation stay identical.
 - USSD is a simulator plus the placeholder in `src/lib/ussd.ts` until a telecom gateway is connected.

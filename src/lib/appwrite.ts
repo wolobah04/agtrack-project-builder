@@ -37,7 +37,7 @@ async function jwt(): Promise<string> {
   try {
     return (await getAccount().createJWT()).jwt;
   } catch (error) {
-    clearSession();
+    if (error instanceof AppwriteException && error.code === 401) clearSession();
     throw message(error);
   }
 }
@@ -45,15 +45,15 @@ async function jwt(): Promise<string> {
 export const phoneEmail = (phone: string) => `${phone.replace(/\D/g, "")}@phone.agtrack.app`;
 
 type Resource = "harvests" | "expenses" | "losses" | "inventory" | "traces" | "reports";
-type Row = { id: string; farmer_id: string; [key: string]: unknown };
+type Row = { id: string; farmer_id: string };
 
 function resource<R extends Row>(name: Resource) {
   return {
-    list: async (farmerId?: string): Promise<R[]> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "list", resource: name, ...(farmerId ? { farmerId } : {}) } }) as Promise<R[]>,
-    all: async (): Promise<R[]> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "list", resource: name, all: true } }) as Promise<R[]>,
-    get: async (id: string): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "get", resource: name, id } }) as Promise<R>,
-    create: async (data: Record<string, unknown>): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "create", resource: name, data } }) as Promise<R>,
-    update: async (id: string, data: Record<string, unknown>): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "update", resource: name, id, data } }) as Promise<R>,
+    list: async (farmerId?: string): Promise<R[]> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "list", resource: name, ...(farmerId ? { farmerId } : {}) } }) as unknown as Promise<R[]>,
+    all: async (): Promise<R[]> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "list", resource: name, all: true } }) as unknown as Promise<R[]>,
+    get: async (id: string): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "get", resource: name, id } }) as unknown as Promise<R>,
+    create: async (data: Record<string, unknown>): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "create", resource: name, data } }) as unknown as Promise<R>,
+    update: async (id: string, data: Record<string, unknown>): Promise<R> => mutateAppwriteRecord({ data: { jwt: await jwt(), action: "update", resource: name, id, data } }) as unknown as Promise<R>,
     remove: async (id: string): Promise<void> => { await mutateAppwriteRecord({ data: { jwt: await jwt(), action: "remove", resource: name, id } }); },
   };
 }
@@ -101,7 +101,7 @@ export const appwriteApi = {
   auth: {
     async login(phone: string, password: string): Promise<{ token: string; user: User }> {
       try {
-        await getAccount().deleteSession("current").catch(() => undefined);
+        if (getSession()) await getAccount().deleteSession("current").catch(() => undefined);
         const session = await getAccount().createEmailPasswordSession(phoneEmail(phone), password);
         const user = await getAppwriteMe({ data: { jwt: await jwt() } });
         return { token: session.$id, user };
@@ -140,7 +140,8 @@ export const appwriteApi = {
     },
   },
   async auditLog(): Promise<AuditLog[]> {
-    return getAppwriteAuditLog({ data: { jwt: await jwt() } });
+    const rows = await getAppwriteAuditLog({ data: { jwt: await jwt() } });
+    return rows.map((row) => ({ id: row.id, actor: String(row["actor"]), action: String(row["action"]), date: String(row["date"]) }));
   },
   async health(): Promise<boolean> {
     return appwriteHealthCheck();

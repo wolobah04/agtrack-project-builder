@@ -45,5 +45,5 @@
 - [x] Verify the preview AI answers with live Bomi rain probability and expected rainfall.
 - [x] Publish the request-header fix and identify the remaining production `429` server-IP rate limit.
 - [x] Send browser-fetched forecasts to the AI server function and verify the preview.
-- [ ] Republish and verify live AI weather on `https://agtrack.online`.
-- [ ] Remove the temporary farmer and chat records used for live domain verification.
+- [x] Republish and verify live AI weather on `https://agtrack.online`.
+- [x] Remove the temporary farmer and chat records used for live domain verification.

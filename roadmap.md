@@ -37,3 +37,11 @@
 - [x] Keep saved sessions across refreshes until explicit sign-out and hide guest links for active users.
 - [x] Sweep public pages, role dashboards, fallback clients, and Appwrite session functions for the same rule.
 - [x] Re-test sign-in persistence, role navigation, and every sign-out path; clean up temporary accounts.
+
+# Custom-domain weather
+
+- [x] Reproduce the missing forecast in the published AI chat while the Weather page succeeds.
+- [x] Identify AgTrack's Open-Meteo server requests and preserve provider errors for diagnostics.
+- [x] Verify the preview AI answers with live Bomi rain probability and expected rainfall.
+- [ ] Publish and verify on `https://agtrack.online` (waiting for publication approval).
+- [x] Remove the temporary farmer and chat records used for domain verification.

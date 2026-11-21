@@ -6,8 +6,13 @@ export interface Forecast {
 export async function getForecast(county: string): Promise<Forecast> {
   const c = COUNTIES[county] ?? COUNTIES["Montserrado"]!;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Africa%2FMonrovia&forecast_days=7`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("Weather service is not available right now");
+  const r = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "AgTrack/1.0 (+https://agtrack.online)",
+    },
+  });
+  if (!r.ok) throw new Error(`Weather service returned ${r.status}`);
   const j = await r.json();
   return {
     current: { temperature: j.current.temperature_2m, humidity: j.current.relative_humidity_2m, wind: j.current.wind_speed_10m, code: j.current.weather_code, rain: j.current.precipitation },

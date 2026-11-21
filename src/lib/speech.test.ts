@@ -1,14 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { appendTranscript, formatRecordingTime } from "@/lib/speech";
+import { submitTranscript, formatRecordingTime } from "@/lib/speech";
 
 describe("Farmer speech input", () => {
-  it("adds a transcript to the editable draft without sending or replacing existing text", () => {
-    expect(appendTranscript("Should I water?", "What is today's rain probability?")).toBe("Should I water? What is today's rain probability?");
+  it("automatically submits the transcript once without an edit or Send action", async () => {
+    const questions: string[] = [];
+    await submitTranscript("What is today's rain probability?", async (question) => { questions.push(question); });
+    expect(questions).toEqual(["What is today's rain probability?"]);
   });
 
-  it("normalizes recording whitespace and respects the 500-character message limit", () => {
-    expect(appendTranscript("", "  How much\n rice   do I have?  ")).toBe("How much rice do I have?");
-    expect(appendTranscript("", "a".repeat(550))).toHaveLength(500);
+  it("normalizes recording whitespace and respects the 500-character message limit", async () => {
+    const questions: string[] = [];
+    const send = (question: string) => { questions.push(question); };
+    await submitTranscript("  How much\n rice   do I have?  ", send);
+    await submitTranscript("a".repeat(550), send);
+    expect(questions[0]).toBe("How much rice do I have?");
+    expect(questions[1]).toHaveLength(500);
+  });
+
+  it("does not submit an empty transcription", async () => {
+    const questions: string[] = [];
+    await expect(submitTranscript("  \n ", (question) => { questions.push(question); })).rejects.toThrow("clear question");
+    expect(questions).toEqual([]);
   });
 
   it("formats the one-minute recording timer", () => {

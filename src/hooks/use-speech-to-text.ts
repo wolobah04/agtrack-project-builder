@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { appwriteAssistant, USE_APPWRITE } from "@/lib/appwrite";
-import { MAX_AUDIO_BYTES, MAX_RECORDING_SECONDS, preferredRecordingType } from "@/lib/speech";
+import { MAX_AUDIO_BYTES, MAX_RECORDING_SECONDS, preferredRecordingType, submitTranscript } from "@/lib/speech";
 
 export type SpeechState = "idle" | "recording" | "transcribing";
 
@@ -23,7 +23,7 @@ function microphoneError(error: unknown) {
   return "The microphone could not start. Check your browser permission and try again.";
 }
 
-export function useSpeechToText(onTranscript: (text: string) => void) {
+export function useSpeechToText(onTranscript: (text: string) => void | Promise<void>) {
   const [state, setState] = useState<SpeechState>("idle");
   const [seconds, setSeconds] = useState(0);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -104,9 +104,8 @@ export function useSpeechToText(onTranscript: (text: string) => void) {
             if (blob.size > MAX_AUDIO_BYTES) throw new Error("That recording is too large. Please keep your question under one minute.");
             const audioBase64 = await blobToBase64(blob);
             const result = await appwriteAssistant.transcribe(audioBase64, mimeType);
-            if (!result.text.trim()) throw new Error("I couldn't hear a clear question. Please try again or type it instead.");
-            callbackRef.current(result.text);
-            toast.success("Voice message added. Review it, then tap Send.");
+            if (cancelledRef.current) return;
+            await submitTranscript(result.text, callbackRef.current);
           } catch (error) {
             toast.error(error instanceof Error ? error.message : "Your voice message could not be transcribed. Please try again.");
           } finally {

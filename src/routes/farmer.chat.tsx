@@ -9,7 +9,7 @@ import { useFarmScore } from "@/hooks/use-score";
 import { useSpeechToText } from "@/hooks/use-speech-to-text";
 import { answer } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
-import { appendTranscript, formatRecordingTime, MAX_RECORDING_SECONDS } from "@/lib/speech";
+import { formatRecordingTime, MAX_RECORDING_SECONDS } from "@/lib/speech";
 import { appwriteAssistant, appwriteChat, USE_APPWRITE } from "@/lib/appwrite";
 import { toast } from "sonner";
 
@@ -31,22 +31,19 @@ function Chat() {
   const s = useSession(); const farm = useFarmScore();
   const key = `agtrack-chat-${s?.user.id}`; const [msgs, setMsgs] = useState<Msg[]>([]); const [text, setText] = useState(""); const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const speech = useSpeechToText((transcript) => {
-    setText((current) => appendTranscript(current, transcript));
-    window.setTimeout(() => inputRef.current?.focus(), 0);
-  });
+  const speech = useSpeechToText((transcript) => send(transcript, "voice"));
   useEffect(() => {
     if (!s) return;
     if (USE_APPWRITE) appwriteChat.list().then(setMsgs).catch((x) => toast.error((x as Error).message));
     else setMsgs(JSON.parse(localStorage.getItem(key) ?? "[]"));
   }, [s, key]);
   useEffect(() => { if (s && !USE_APPWRITE) localStorage.setItem(key, JSON.stringify(msgs.slice(-50))); end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, s, key]);
-  const send = async (q: string) => {
+  const send = async (q: string, source: "text" | "voice" = "text") => {
     const question = q.trim();
-    if (!question || typing || speech.state !== "idle" || !s) return;
+    if (!question || typing || (speech.state !== "idle" && source !== "voice") || !s) return;
     const history = msgs.slice(-12);
-    setText(""); setMsgs((m) => [...m, { role: "user", text: question }]); setTyping(true);
+    if (source === "text") setText("");
+    setMsgs((m) => [...m, { role: "user", text: question }]); setTyping(true);
     try {
       let a: string;
       if (USE_APPWRITE) {
@@ -79,11 +76,11 @@ function Chat() {
                 <span className="size-2 animate-pulse rounded-full bg-destructive" />
                 <span className="flex-1">Listening… {formatRecordingTime(speech.seconds)} / {formatRecordingTime(MAX_RECORDING_SECONDS)}</span>
                 <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={speech.cancel}>Cancel</Button>
-              </> : <><LoaderCircle className="size-4 animate-spin text-primary" /><span>Turning your voice into editable text…</span></>}
+              </> : <><LoaderCircle className="size-4 animate-spin text-primary" /><span>{typing ? "Getting your answer…" : "Processing your voice message…"}</span></>}
             </div>
           )}
           <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2 p-3">
-            <Input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question or use the microphone…" className="h-12" maxLength={500} aria-label="Message" disabled={speech.state === "transcribing"} />
+            <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question or use the microphone…" className="h-12" maxLength={500} aria-label="Message" disabled={speech.state === "transcribing"} />
             <Button
               type="button"
               size="icon"
@@ -91,8 +88,8 @@ function Chat() {
               className={cn("size-12 shrink-0 rounded-full", speech.state === "recording" && "shadow-glow")}
               onClick={speech.state === "recording" ? speech.stop : speech.start}
               disabled={typing || speech.state === "transcribing"}
-              aria-label={speech.state === "recording" ? "Stop recording and transcribe" : speech.state === "transcribing" ? "Transcribing voice message" : "Record voice message"}
-              title={speech.state === "recording" ? "Stop and transcribe" : "Speak your question"}
+              aria-label={speech.state === "recording" ? "Stop recording and send" : speech.state === "transcribing" ? "Processing voice message" : "Record voice message"}
+              title={speech.state === "recording" ? "Stop and send" : "Speak your question"}
             >
               {speech.state === "recording" ? <Square className="fill-current" /> : speech.state === "transcribing" ? <LoaderCircle className="animate-spin" /> : <Mic />}
             </Button>

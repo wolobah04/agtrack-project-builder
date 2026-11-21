@@ -7,9 +7,10 @@ export function preferredRecordingType(isSupported: (type: string) => boolean) {
   return RECORDING_TYPES.find((type) => isSupported(type)) ?? "";
 }
 
-export function appendTranscript(draft: string, transcript: string, maxLength = 500) {
-  const spoken = transcript.trim().replace(/\s+/g, " ");
-  return [draft.trim(), spoken].filter(Boolean).join(" ").slice(0, maxLength);
+export async function submitTranscript(transcript: string, send: (question: string) => void | Promise<void>) {
+  const question = transcript.trim().replace(/\s+/g, " ").slice(0, 500);
+  if (!question) throw new Error("I couldn't hear a clear question. Please try again or type it instead.");
+  await send(question);
 }
 
 export function formatRecordingTime(seconds: number) {

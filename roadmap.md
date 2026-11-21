@@ -65,6 +65,7 @@
 
 # Farmer voice messages
 
-- [x] Add microphone recording, clear recording states, and an editable transcript alongside text chat.
+- [x] Add microphone recording and clear recording states alongside text chat.
 - [x] Transcribe audio securely with Groq without exposing the API key in the browser.
 - [x] Test microphone permission, transcription, text sending, and cleanup of temporary records.
+- [x] Automatically submit voice transcripts to the AI and verify an answer without tapping Send.

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
 import { buildGroqMessages, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
-import type { Expense, Harvest, InventoryTx, LossRecord, Role, User } from "./types";
+import type { Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
 
 const PROJECT_FALLBACK = "6b011308003b57f341b6";
@@ -320,10 +320,10 @@ export const appwriteNationalData = createServerFn({ method: "POST" })
     const config = requireConfig({ endpoint: process.env["APPWRITE_ENDPOINT"] ?? "https://cloud.appwrite.io/v1", projectId: process.env["APPWRITE_PROJECT_ID"] ?? PROJECT_FALLBACK, apiKey: process.env["APPWRITE_API_KEY"] ?? "", databaseId: process.env["APPWRITE_DATABASE_ID"] ?? "agtrack" });
     const actor = await getActor(config, data.jwt);
     if (!canManageUsers(actor)) throw new HttpError("Ministry admin access required", 403);
-    const [users, harvests, losses, traces, expenses] = await Promise.all([
-      listUsers(config, actor), listRows(config, "harvests"), listRows(config, "losses"), listRows(config, "traces"), listRows(config, "expenses"),
+    const [users, harvests, losses, traces, expenses, inventory] = await Promise.all([
+      listUsers(config, actor), listRows(config, "harvests"), listRows(config, "losses"), listRows(config, "traces"), listRows(config, "expenses"), listRows(config, "inventory"),
     ]);
-    return { users, harvests, losses, traces, expenses };
+    return { users, harvests, losses, traces, expenses, inventory };
   });
 
 export const getAppwriteBatchHistory = createServerFn({ method: "POST" })
@@ -371,8 +371,9 @@ export const askFarmAssistant = createServerFn({ method: "POST" })
       listRows(config, "expenses", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
       listRows(config, "losses", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
       listRows(config, "inventory", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
+      listRows(config, "traces", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
     ]);
-    const [forecast, [harvests, expenses, losses, inventory]] = await Promise.all([weatherRequest, recordsRequest]);
+    const [forecast, [harvests, expenses, losses, inventory, traces]] = await Promise.all([weatherRequest, recordsRequest]);
     const systemPrompt = buildSystemPrompt({
       farmer: actor,
       weatherCounty,
@@ -382,6 +383,7 @@ export const askFarmAssistant = createServerFn({ method: "POST" })
       expenses: expenses as unknown as Expense[],
       losses: losses as unknown as LossRecord[],
       inventory: inventory as unknown as InventoryTx[],
+      traces: traces as unknown as Trace[],
     });
 
     let response: Response;

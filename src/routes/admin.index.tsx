@@ -5,14 +5,14 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { PageHeader, Panel, StatCard, Loading } from "@/components/agtrack/ui";
 import { api } from "@/lib/api";
 import { COUNTY_NAMES } from "@/lib/constants";
-import { computeScore } from "@/lib/score";
+import { computeFarmScore } from "@/lib/score";
 
 export const Route = createFileRoute("/admin/")({ component: Dash });
 export function useNational() {
   return useQuery({ queryKey: ["national"], queryFn: api.national, select: (d) => {
     const farmers = d.users.filter((u) => u.role === "farmer");
     const scores = farmers.map((f) => { const own = <T extends { farmer_id: string }>(a: T[]) => a.filter((x) => x.farmer_id === f.id);
-      return computeScore({ harvests: own(d.harvests), losses: own(d.losses), traces: own(d.traces), recordDates: [...own(d.harvests), ...own(d.losses), ...own(d.expenses)].map((x) => x.date) }).total; });
+      return computeFarmScore({ harvests: own(d.harvests), losses: own(d.losses), traces: own(d.traces), expenses: own(d.expenses), inventory: own(d.inventory) }).total; });
     const county = (c: string) => d.users.filter((u) => u.county === c).map((u) => u.id);
     const byCounty = COUNTY_NAMES.map((c) => { const ids = county(c); return { county: c, farmers: farmers.filter((f) => f.county === c).length, harvest: d.harvests.filter((h) => ids.includes(h.farmer_id)).reduce((s, h) => s + h.quantity_kg, 0), losses: d.losses.filter((l) => ids.includes(l.farmer_id)).reduce((s, l) => s + l.quantity_kg, 0) }; });
     const byCrop = Object.entries(d.harvests.reduce<Record<string, number>>((a, h) => ({ ...a, [h.crop]: (a[h.crop] ?? 0) + h.quantity_kg }), {})).map(([crop, kg]) => ({ crop, kg }));

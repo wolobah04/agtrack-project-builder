@@ -14,3 +14,10 @@
 - [x] Replace static Appwrite chat replies with model responses and preserve conversation history.
 - [x] Add the Groq API key through the secure secret form.
 - [x] Verify a signed-in farmer receives an AI answer grounded in live weather and farm records.
+
+# Real quality score
+
+- [x] Calculate farmer and Ministry scores from complete saved records, with no demo or partial-load score.
+- [x] Show the real record totals behind the farmer's score and its historical trend.
+- [x] Give Groq the identical score, component breakdown and underlying record totals.
+- [x] Test empty farms, real score changes and an AI quality-score answer.

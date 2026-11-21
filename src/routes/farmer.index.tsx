@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Wheat, Wallet, TrendingDown, Award, Plus, CloudSun, QrCode } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { PageHeader, Panel, StatCard, Loading, Empty } from "@/components/agtrack/ui";
+import { PageHeader, Panel, StatCard, Loading, Empty, ErrorState } from "@/components/agtrack/ui";
 import { FormDialog, useDialog } from "@/components/agtrack/FormDialog";
 import { Button } from "@/components/ui/button";
 import { useFarmScore } from "@/hooks/use-score";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/farmer/")({ component: Overview });
 
 function Overview() {
   const s = useSession(); const inv = useInvalidate(); const dlg = useDialog();
-  const { score, loading, harvests, expenses, losses, traces } = useFarmScore();
+  const { score, loading, error, harvests, expenses, losses, traces } = useFarmScore();
   const wx = useQuery({ queryKey: ["wx", s?.user.county], queryFn: () => getForecast(s!.user.county), enabled: !!s, staleTime: 30 * 60e3 });
   const sum = (a: { [k: string]: any }[], k: string) => a.reduce((t, x) => t + x[k], 0);
   const byMonth = Object.values(harvests.reduce<Record<string, { m: string; kg: number }>>((acc, h) => { const m = h.date.slice(0, 7); acc[m] ??= { m: new Date(h.date).toLocaleDateString("en-GB", { month: "short" }), kg: 0 }; acc[m].kg += h.quantity_kg; return acc; }, {})).reverse();
@@ -25,13 +25,13 @@ function Overview() {
   return (
     <>
       <PageHeader title="Overview" subtitle={`${s?.user.farm_type ?? ""} farm · ${s?.user.county ?? ""} County`} action={<Button variant="hero" onClick={() => dlg.show()}><Plus />Log harvest</Button>} />
-      {loading ? <Loading rows={4} /> : (
+      {loading ? <Loading rows={4} /> : error ? <ErrorState text="Could not load all your farm records. Please try again." /> : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard icon={Wheat} label="Total harvest" value={`${sum(harvests, "quantity_kg").toLocaleString()} kg`} hint={`${harvests.length} batches`} />
             <StatCard icon={Wallet} label="Expenses" value={fmtLRD(sum(expenses, "amount"))} />
             <StatCard icon={TrendingDown} label="Losses" value={`${sum(losses, "quantity_kg")} kg`} hint={`${Math.round((score?.lossRate ?? 0) * 100)}% loss rate`} />
-            <StatCard icon={Award} label="Quality score" value={score?.total ?? 0} hint="out of 100" accent />
+            <StatCard icon={Award} label="Quality score" value={score?.total ?? 0} hint={`out of 100 · ${score?.recordCount ?? 0} saved records`} accent />
           </div>
           <div className="grid gap-6 lg:grid-cols-3">
             <Panel title="Harvest by month (kg)" className="lg:col-span-2">

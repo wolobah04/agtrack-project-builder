@@ -13,7 +13,11 @@ All data access goes through `src/lib/api.ts`. Appwrite is used automatically; t
 
 ## AI farm assistant
 
-The farmer chat uses Groq's `openai/gpt-oss-120b` model through an authenticated server function. Each request includes live Open-Meteo weather and only the signed-in farmer's own harvest, expense, loss and inventory records. Store `GROQ_API_KEY` in the project's secure Secrets settings; it is never sent to the browser. The browser-only sample-data mode keeps its original rule-based fallback.
+The farmer chat uses Groq's `openai/gpt-oss-120b` model through an authenticated server function. Each request includes live Open-Meteo weather and only the signed-in farmer's own harvest, expense, loss, inventory and traceability records. It also includes the farmer's current quality score, calculated with the same shared formula and complete records used by the farmer and Ministry dashboards. Store `GROQ_API_KEY` in the project's secure Secrets settings; it is never sent to the browser. The browser-only sample-data mode keeps its original rule-based fallback.
+
+## Quality score
+
+The quality score is derived from saved farm records rather than stored as demo data. Empty farms start at 0, incomplete record loads show an error instead of a partial score, and the farmer page shows the harvest, loss, traceability and activity totals behind the result.
 
 ```sh
 bun install

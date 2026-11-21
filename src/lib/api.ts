@@ -159,8 +159,8 @@ const restApi = {
   async auditLog(): Promise<AuditLog[]> { await wait(); return [...db().audit]; },
   async health(): Promise<boolean> { if (USE_MOCK) return true; try { await http("/utils/health-check/"); return true; } catch { return false; } },
   /** National aggregates (no dedicated endpoint yet: derived on the frontend). */
-  async national(): Promise<Pick<MockDB, "users" | "harvests" | "losses" | "traces" | "expenses">> {
-    await wait(); const D = db(); return { users: D.users, harvests: D.harvests, losses: D.losses, traces: D.traces, expenses: D.expenses };
+  async national(): Promise<Pick<MockDB, "users" | "harvests" | "losses" | "traces" | "expenses" | "inventory">> {
+    await wait(); const D = db(); return { users: D.users, harvests: D.harvests, losses: D.losses, traces: D.traces, expenses: D.expenses, inventory: D.inventory };
   },
 };
 

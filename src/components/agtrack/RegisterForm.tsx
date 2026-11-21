@@ -19,18 +19,20 @@ export const registerSchema = z.object({
 });
 
 export function RegisterForm({ role, agentId, submitLabel = "Create account", onDone }: { role: Role; agentId?: string; submitLabel?: string; onDone: (u: User, password: string) => void }) {
+  const isAgent = role === "agent";
+  const schema = registerSchema.extend({ farm_type: isAgent ? z.string().optional() : z.string().min(1, "Choose a farm type") });
   const [f, setF] = useState({ phone: "+231", name: "", county: "", farm_type: "", password: "" });
   const [err, setErr] = useState<Record<string, string>>({}); const [loading, setLoading] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const r = registerSchema.safeParse(f);
+    const r = schema.safeParse(f);
     if (!r.success) { setErr(Object.fromEntries(r.error.issues.map((i) => [i.path[0], i.message]))); return; }
     setErr({}); setLoading(true);
-    try { const u = await api.auth.signup({ ...r.data, role, ...(agentId ? { agent_id: agentId } : {}) }); onDone(u, r.data.password); }
+    try { const u = await api.auth.signup({ ...r.data, farm_type: r.data.farm_type || "Mixed", role, ...(agentId ? { agent_id: agentId } : {}) }); onDone(u, r.data.password); }
     catch (x) { toast.error((x as Error).message); } finally { setLoading(false); }
   };
   const field = (k: keyof typeof f, label: string, node: React.ReactNode) => (
-    <div className={`space-y-2 ${k === "phone" || k === "name" ? "" : k === "password" ? "sm:col-span-2" : ""}`}><Label htmlFor={k}>{label}</Label>{node}{err[k] && <p className="text-xs text-destructive">{err[k]}</p>}</div>);
+    <div className={`space-y-2 ${k === "phone" || k === "name" ? "" : k === "password" || (isAgent && k === "county") ? "sm:col-span-2" : ""}`}><Label htmlFor={k}>{label}</Label>{node}{err[k] && <p className="text-xs text-destructive">{err[k]}</p>}</div>);
   const sel = (k: "county" | "farm_type", opts: string[], ph: string) => (
     <Select value={f[k]} onValueChange={(v) => setF({ ...f, [k]: v })}><SelectTrigger id={k} className="h-11"><SelectValue placeholder={ph} /></SelectTrigger>
       <SelectContent>{opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select>);
@@ -39,7 +41,7 @@ export function RegisterForm({ role, agentId, submitLabel = "Create account", on
       {field("phone", "Phone number", <Input id="phone" type="tel" className="h-11" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />)}
       {field("name", "Name", <Input id="name" className="h-11" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />)}
       {field("county", "County", sel("county", COUNTY_NAMES, "Choose county"))}
-      {field("farm_type", "Farm type", sel("farm_type", FARM_TYPES, "Choose farm type"))}
+      {!isAgent && field("farm_type", "Farm type", sel("farm_type", FARM_TYPES, "Choose farm type"))}
       {field("password", "Password", <Input id="password" type="password" className="h-11" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />)}
       <Button type="submit" variant="hero" size="lg" className="w-full rounded-full sm:col-span-2" disabled={loading}>{loading && <Loader2 className="animate-spin" />}{submitLabel}</Button>
     </form>

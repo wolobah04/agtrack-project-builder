@@ -3,7 +3,7 @@ import { PUBLIC_APP_ORIGIN, publicBatchUrl } from "./public-links";
 
 describe("public buyer links", () => {
   it("uses the permanent public app address instead of the private preview", () => {
-    expect(PUBLIC_APP_ORIGIN).toBe("https://project--1003bbae-3eeb-4b17-9ed0-fd044c80451a.lovable.app");
+    expect(PUBLIC_APP_ORIGIN).toBe("https://agtrack.online");
     expect(PUBLIC_APP_ORIGIN).not.toContain("id-preview");
   });
 

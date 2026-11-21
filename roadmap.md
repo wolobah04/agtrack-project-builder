@@ -28,4 +28,5 @@
 # Public buyer QR links
 
 - [x] Generate QR codes with the permanent public app address instead of the private preview address.
-- [ ] Publish AgTrack and verify a signed-out buyer can open batch history without a Lovable login; publishing requested for `https://agtrack.online`.
+- [x] Verify a signed-out buyer can open batch history at `https://agtrack.online` without a Lovable login.
+- [ ] Republish with buyer QR codes pointed at the verified `https://agtrack.online` domain.

@@ -1,11 +1,11 @@
-import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Trace, User } from "./types";
+import type { AuditLog, CropActivity, CropSeason, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Trace, User } from "./types";
 import { COUNTY_NAMES, FARM_TYPES } from "./constants";
 
 const KEY = "agtrack-mock-db-v1";
 export interface MockDB {
   users: (User & { password: string })[];
   harvests: Harvest[]; expenses: Expense[]; losses: LossRecord[]; inventory: InventoryTx[];
-  traces: Trace[]; reports: FarmReport[]; audit: AuditLog[];
+  traces: Trace[]; reports: FarmReport[]; audit: AuditLog[]; crop_seasons: CropSeason[]; crop_activities: CropActivity[];
 }
 export const uid = () => Math.random().toString(36).slice(2, 10);
 const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
@@ -47,7 +47,7 @@ function seed(): MockDB {
     { id: uid(), actor: "Ministry Admin", action: "Deactivated user Hawa Sherif", date: daysAgo(7) },
     { id: uid(), actor: "System", action: "Generated monthly national report", date: now },
   ];
-  return { users, harvests, expenses, losses, inventory, traces, reports: [], audit };
+  return { users, harvests, expenses, losses, inventory, traces, reports: [], audit, crop_seasons: [], crop_activities: [] };
 }
 
 let cache: MockDB | null = null;
@@ -56,6 +56,8 @@ export function db(): MockDB {
   if (typeof window === "undefined") return (cache = seed());
   const raw = localStorage.getItem(KEY);
   cache = raw ? (JSON.parse(raw) as MockDB) : seed();
+  cache.crop_seasons ??= [];
+  cache.crop_activities ??= [];
   save();
   return cache;
 }

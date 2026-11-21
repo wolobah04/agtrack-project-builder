@@ -4,12 +4,16 @@ Farm records, field-agent support, produce traceability and Ministry reporting f
 
 ## Backend
 
-AgTrack is connected to **Appwrite Cloud** project `6b011308003b57f341b6`. The database contains 11 tables covering users, separate security roles, harvests, expenses, losses, inventory, traceability, reports, activity, chat history and notifications.
+AgTrack is connected to **Appwrite Cloud** project `6b011308003b57f341b6`. The database contains 13 tables covering users, separate security roles, harvests, crop seasons, crop activities, expenses, losses, inventory, traceability, reports, activity, chat history and notifications.
 
 All data access goes through `src/lib/api.ts`. Appwrite is used automatically; the earlier REST API and browser sample-data mode remain fallbacks.
 
 - [Complete Appwrite setup guide](docs/appwrite-setup.md)
 - [Idempotent schema setup script](scripts/setup-appwrite.mjs)
+
+## Crop seasons
+
+Farmers can start plot-specific seasons from editable crop templates or an empty calendar. The farmer area includes a desktop calendar, mobile agenda, actual-work timeline, rescheduling, skipped-work reasons, recurring field checks, unplanned work, and linked labor or purchase expenses. Only completed activities explicitly approved by the farmer can appear on the linked public batch passport, and only when their actual date is on or before the batch harvest date.
 
 ## AI farm assistant
 

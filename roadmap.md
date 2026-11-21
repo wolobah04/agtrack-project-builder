@@ -38,6 +38,14 @@
 - [x] Sweep public pages, role dashboards, fallback clients, and Appwrite session functions for the same rule.
 - [x] Re-test sign-in persistence, role navigation, and every sign-out path; clean up temporary accounts.
 
+# Farmer crop seasons
+
+- [x] Add season and planned-activity storage with owner-only farm access and linked expenses.
+- [x] Build crop-season templates, editable planning calendar, mobile agenda, and actual-work timeline.
+- [x] Support rescheduling, skipping, recurring field checks, unplanned work, and publication approval.
+- [x] Show only approved completed work on the matching public batch, up to its harvest date.
+- [x] Test scheduling, recurring work, expense linking, and harvest-cutoff privacy rules; verify the farmer flow and remove temporary records.
+
 # Custom-domain weather
 
 - [x] Reproduce the missing forecast in the published AI chat while the Weather page succeeds.

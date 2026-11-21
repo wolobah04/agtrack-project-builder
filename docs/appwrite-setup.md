@@ -38,7 +38,9 @@ The script is idempotent: you can safely run it again. It creates the database, 
 | `users` | Names, phone numbers, counties, farm types, assignments and active status |
 | `user_roles` | Farmer, agent and Ministry roles, separated from editable profiles |
 | `harvests` | Harvest quantities, grades and unique batch codes |
-| `expenses` | Farm costs by category |
+| `expenses` | Farm costs by category, optionally linked to a crop-season activity |
+| `crop_seasons` | Plot-specific crop seasons, planting dates and linked harvest batches |
+| `crop_activities` | Private plans, actual work history, repeat checks and buyer approval |
 | `losses` | Crop losses and causes |
 | `inventory` | Stock-in and stock-out transactions |
 | `traces` | Harvest, storage, transfer and sale history |
@@ -47,7 +49,7 @@ The script is idempotent: you can safely run it again. It creates the database, 
 | `chat_messages` | Private farm assistant history |
 | `notifications` | Per-user notification records |
 
-All application tables deny direct browser writes. TanStack server functions validate the Appwrite session JWT, check the separate role record and farmer assignment, then use the server key. Public batch lookup returns only the batch's crop, county, grade and safe trace stages.
+All application tables deny direct browser writes. TanStack server functions validate the Appwrite session JWT, check the separate role record and farmer assignment, then use the server key. Public batch lookup returns only the batch's crop, county, grade, safe trace stages, and farmer-approved completed crop activities dated on or before the batch harvest. Planned, overdue and skipped work always remains private.
 
 ## 4. Sign in
 

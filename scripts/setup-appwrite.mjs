@@ -28,6 +28,7 @@ const users = new Users(client);
 
 const string = (key, size, required = true) => ({ type: "string", key, size, required });
 const float = (key, required = true) => ({ type: "float", key, required, min: 0 });
+const integer = (key, required = true) => ({ type: "integer", key, required, min: 0 });
 const boolean = (key, required = true) => ({ type: "boolean", key, required });
 const datetime = (key, required = true) => ({ type: "datetime", key, required });
 const index = (key, columns, type = TablesDBIndexType.Key, orders) => ({ key, columns, type, orders });
@@ -52,8 +53,18 @@ const schema = [
   },
   {
     id: "expenses", name: "Farm expenses",
-    columns: [farmer, string("category", 80), float("amount"), string("description", 500, false), date],
-    indexes: [index("farmer_id_key", ["farmer_id"]), index("date_key", ["date"], TablesDBIndexType.Key, [OrderBy.Desc])],
+    columns: [farmer, string("category", 80), float("amount"), string("description", 500, false), date, string("season_id", 36, false), string("activity_id", 36, false)],
+    indexes: [index("farmer_id_key", ["farmer_id"]), index("date_key", ["date"], TablesDBIndexType.Key, [OrderBy.Desc]), index("activity_id_key", ["activity_id"])],
+  },
+  {
+    id: "crop_seasons", name: "Crop seasons",
+    columns: [farmer, string("name", 160), string("crop", 100), string("variety", 120, false), string("plot", 200), string("planting_date", 10), string("batch_code", 50, false), string("status", 20), datetime("created_at")],
+    indexes: [index("farmer_id_key", ["farmer_id"]), index("batch_code_key", ["batch_code"]), index("planting_date_key", ["planting_date"])],
+  },
+  {
+    id: "crop_activities", name: "Crop season activities",
+    columns: [farmer, string("season_id", 36), string("title", 160), string("planned_date", 10), string("planned_end_date", 10, false), string("notes", 1000, false), string("status", 20), string("actual_date", 10, false), string("actual_notes", 2000, false), string("skip_reason", 500, false), integer("recurrence_days", false), boolean("approved_for_public", true, false), datetime("created_at")],
+    indexes: [index("farmer_id_key", ["farmer_id"]), index("season_id_key", ["season_id"]), index("planned_date_key", ["planned_date"]), index("actual_date_key", ["actual_date"])],
   },
   {
     id: "losses", name: "Loss records",
@@ -138,6 +149,7 @@ for (const table of schema) {
       const args = { databaseId, tableId: table.id, key: column.key, required: column.required };
       if (column.type === "string") return tables.createStringColumn({ ...args, size: column.size });
       if (column.type === "float") return tables.createFloatColumn({ ...args, min: column.min });
+      if (column.type === "integer") return tables.createIntegerColumn({ ...args, min: column.min });
       if (column.type === "boolean") return tables.createBooleanColumn(args);
       if (column.type === "datetime") return tables.createDatetimeColumn(args);
       throw new Error(`Unsupported column type ${column.type}`);

@@ -4,8 +4,9 @@ import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
 import { buildGroqMessages, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
-import type { Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
+import type { CropActivity, CropSeason, Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
+import { approvedBatchActivities, completionExpense, completionUpdate, nextRecurringActivity } from "./crop-calendar";
 
 const PROJECT_FALLBACK = "6b011308003b57f341b6";
 type Config = { endpoint: string; projectId: string; apiKey: string; databaseId: string };
@@ -183,7 +184,7 @@ const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const farmerId = z.string().min(1).max(36);
 const recordSchemas = {
   harvests: z.object({ farmer_id: farmerId.optional(), crop: z.string().trim().min(1).max(100), quantity_kg: z.number().nonnegative(), grade: z.enum(["A", "B", "C"]).nullable(), date: dateField, batch_code: z.string().min(4).max(50), location: z.string().trim().min(1).max(200) }),
-  expenses: z.object({ farmer_id: farmerId.optional(), category: z.string().min(1).max(80), amount: z.number().nonnegative(), description: z.string().max(500), date: dateField }),
+  expenses: z.object({ farmer_id: farmerId.optional(), category: z.string().min(1).max(80), amount: z.number().nonnegative(), description: z.string().max(500), date: dateField, season_id: farmerId.nullable().optional(), activity_id: farmerId.nullable().optional() }),
   losses: z.object({ farmer_id: farmerId.optional(), crop: z.string().trim().min(1).max(100), quantity_kg: z.number().nonnegative(), cause: z.string().min(1).max(100), date: dateField }),
   inventory: z.object({ farmer_id: farmerId.optional(), item: z.string().trim().min(1).max(120), type: z.enum(["in", "out"]), quantity: z.number(), unit: z.string().min(1).max(30), date: dateField, note: z.string().max(500) }),
   traces: z.object({ farmer_id: farmerId.optional(), batch_code: z.string().min(4).max(50), stage: z.enum(["Harvest", "Storage", "Transfer", "Sale"]), location: z.string().min(1).max(200), actor: z.string().min(1).max(128), date: dateField }),
@@ -334,14 +335,123 @@ export const getAppwriteBatchHistory = createServerFn({ method: "POST" })
     const harvests = await listRows(config, "harvests", [Query.equal("batch_code", data.code)]);
     const harvest = harvests[0];
     if (!harvest) return null;
-    const [farmer, traces] = await Promise.all([
+    const [farmer, traces, seasons] = await Promise.all([
       getRow(config, "users", String(harvest["farmer_id"])),
       listRows(config, "traces", [Query.equal("batch_code", data.code), Query.orderAsc("date")]),
+      listRows(config, "crop_seasons", [Query.equal("batch_code", data.code), Query.equal("farmer_id", String(harvest["farmer_id"]))]),
     ]);
+    const cropActivities = seasons.length ? await listRows(config, "crop_activities", [Query.equal("farmer_id", String(harvest["farmer_id"])), Query.equal("season_id", seasons.map((season) => season.id))]) : [];
+    const approved = approvedBatchActivities(cropActivities as unknown as CropActivity[], seasons as unknown as CropSeason[], harvest as unknown as Harvest);
     return {
       batch_code: String(harvest["batch_code"]), crop: String(harvest["crop"]), county: String(farmer["county"] ?? ""), grade: harvest["grade"] ? String(harvest["grade"]) : null,
       stages: traces.map((trace) => ({ id: trace.id, batch_code: String(trace["batch_code"]), stage: trace["stage"], location: String(trace["location"]), actor: trace["actor"] === farmer["name"] ? "Registered farmer" : String(trace["actor"]), date: String(trace["date"]) })),
+      activities: approved.map((activity) => ({ id: activity.id, title: activity.title, planned_date: activity.planned_date, actual_date: activity.actual_date!, notes: activity.actual_notes })),
     };
+  });
+
+const seasonFields = z.object({
+  name: z.string().trim().min(2).max(160), crop: z.string().trim().min(1).max(100), variety: z.string().trim().max(120),
+  plot: z.string().trim().min(1).max(200), planting_date: dateField, batch_code: z.string().max(50).nullable(), status: z.enum(["active", "completed"]),
+});
+const scheduleFields = z.object({
+  title: z.string().trim().min(1).max(160), planned_date: dateField, planned_end_date: dateField.nullable(),
+  notes: z.string().max(1000), recurrence_days: z.number().int().positive().max(365).nullable(),
+});
+const activityFields = scheduleFields.extend({ season_id: farmerId });
+const completionFields = z.object({
+  actual_date: dateField, actual_notes: z.string().trim().min(1).max(2000), approved_for_public: z.boolean(),
+  expense: z.object({ category: z.string().min(1).max(80), amount: z.number().positive().max(100000000) }).optional(),
+});
+const calendarInput = z.object({
+  jwt: z.string(), action: z.enum(["list", "createSeason", "updateSeason", "createActivity", "updateActivity", "complete", "skip", "approval"]),
+  farmerId: z.string().optional(), id: z.string().optional(), data: z.record(z.string(), z.unknown()).optional(),
+});
+
+async function createPlannedActivity(config: Config, farmerIdValue: string, seasonId: string, draft: unknown) {
+  const clean = scheduleFields.parse(draft);
+  return createRow(config, "crop_activities", undefined, {
+    ...clean, farmer_id: farmerIdValue, season_id: seasonId, status: "planned", actual_date: null,
+    actual_notes: "", skip_reason: "", approved_for_public: false, created_at: new Date().toISOString(),
+  });
+}
+
+export const mutateCropCalendar = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => calendarInput.parse(input))
+  .handler(async ({ data }) => {
+    const config = serverConfig();
+    const actor = await getActor(config, data.jwt);
+    if (data.action === "list") {
+      const target = actor.role === "farmer" ? actor.id : data.farmerId;
+      if (!target) throw new HttpError("Farmer ID is required", 400);
+      await assertFarmerAccess(config, actor, target);
+      const [seasons, activities] = await Promise.all([
+        listRows(config, "crop_seasons", [Query.equal("farmer_id", target), Query.orderDesc("planting_date")]),
+        listRows(config, "crop_activities", [Query.equal("farmer_id", target), Query.orderAsc("planned_date")]),
+      ]);
+      return { seasons, activities };
+    }
+    if (data.action === "createSeason") {
+      const { activities: rawActivities, ...seasonInput } = data.data ?? {};
+      const clean = seasonFields.parse(seasonInput);
+      const drafts = z.array(scheduleFields).max(100).parse(rawActivities ?? []);
+      const owner = actor.role === "farmer" ? actor.id : typeof seasonInput["farmer_id"] === "string" ? seasonInput["farmer_id"] : "";
+      await assertFarmerAccess(config, actor, owner);
+      const season = await createRow(config, "crop_seasons", undefined, { ...clean, farmer_id: owner, created_at: new Date().toISOString() });
+      for (const draft of drafts) await createPlannedActivity(config, owner, season.id, draft);
+      await audit(config, actor.name, `Started crop season ${clean.name}`);
+      return season;
+    }
+    if (data.action === "updateSeason") {
+      if (!data.id) throw new HttpError("Record ID is required", 400);
+      const existing = await getRow(config, "crop_seasons", data.id);
+      await assertFarmerAccess(config, actor, String(existing["farmer_id"]));
+      return updateRow(config, "crop_seasons", data.id, seasonFields.partial().parse(data.data ?? {}));
+    }
+    if (data.action === "createActivity") {
+      const clean = activityFields.parse(data.data ?? {});
+      const season = await getRow(config, "crop_seasons", clean.season_id);
+      await assertFarmerAccess(config, actor, String(season["farmer_id"]));
+      return createPlannedActivity(config, String(season["farmer_id"]), clean.season_id, clean);
+    }
+    if (!data.id) throw new HttpError("Record ID is required", 400);
+    const existing = fromRow(await getRow(config, "crop_activities", data.id));
+    await assertFarmerAccess(config, actor, String(existing["farmer_id"]));
+    if (data.action === "updateActivity") {
+      if (existing["status"] !== "planned") throw new HttpError("Completed or skipped activities stay in the activity history", 400);
+      return updateRow(config, "crop_activities", data.id, scheduleFields.partial().parse(data.data ?? {}));
+    }
+    if (data.action === "approval") {
+      if (existing["status"] !== "completed") throw new HttpError("Only completed work can be approved for buyers", 400);
+      const approved = z.boolean().parse(data.data?.["approved"]);
+      return updateRow(config, "crop_activities", data.id, { approved_for_public: approved });
+    }
+    const season = fromRow(await getRow(config, "crop_seasons", String(existing["season_id"])));
+    if (data.action === "skip") {
+      if (existing["status"] !== "planned") throw new HttpError("Only planned work can be skipped", 400);
+      const reason = z.string().trim().max(500).parse(data.data?.["reason"] ?? "");
+      const updated = await updateRow(config, "crop_activities", data.id, { status: "skipped", skip_reason: reason, approved_for_public: false });
+      const next = nextRecurringActivity(updated as unknown as CropActivity);
+      if (next) await createPlannedActivity(config, String(existing["farmer_id"]), next.season_id, next).catch((error) => console.error("Could not create next field check", error));
+      return updated;
+    }
+    if (existing["status"] !== "planned") throw new HttpError("This work has already been completed or skipped", 400);
+    const completion = completionFields.parse(data.data ?? {});
+    let expenseId = "";
+    if (completion.expense) {
+      const expense = completionExpense(existing as unknown as CropActivity, season as unknown as CropSeason, completion);
+      if (expense) expenseId = (await createRow(config, "expenses", undefined, { ...expense, farmer_id: String(existing["farmer_id"]) })).id;
+    }
+    let updated;
+    try {
+      updated = await updateRow(config, "crop_activities", data.id, completionUpdate(existing as unknown as CropActivity, completion));
+    } catch (error) {
+      if (expenseId) await deleteRow(config, "expenses", expenseId).catch(() => undefined);
+      throw error;
+    }
+    const next = nextRecurringActivity(updated as unknown as CropActivity);
+    if (next) await createPlannedActivity(config, String(existing["farmer_id"]), next.season_id, next).catch((error) => console.error("Could not create next field check", error));
+    await audit(config, actor.name, `Logged crop work: ${String(existing["title"])}`);
+    return updated;
   });
 
 const forecastInput = z.object({

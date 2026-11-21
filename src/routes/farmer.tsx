@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { LayoutDashboard, Boxes, CloudSun, MessageCircle, TrendingDown, Award, FileBarChart, QrCode, UserCircle } from "lucide-react";
+import { LayoutDashboard, Boxes, CalendarDays, CloudSun, MessageCircle, TrendingDown, Award, FileBarChart, QrCode, UserCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { DashboardShell } from "@/components/agtrack/DashboardShell";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/farmer")({
 });
 
 const nav = [
-  { to: "/farmer", label: "Overview", icon: LayoutDashboard, exact: true }, { to: "/farmer/inventory", label: "Inventory", icon: Boxes },
+  { to: "/farmer", label: "Overview", icon: LayoutDashboard, exact: true }, { to: "/farmer/calendar", label: "Crop Calendar", icon: CalendarDays }, { to: "/farmer/inventory", label: "Inventory", icon: Boxes },
   { to: "/farmer/weather", label: "Weather", icon: CloudSun }, { to: "/farmer/chat", label: "Chat", icon: MessageCircle },
   { to: "/farmer/losses", label: "Loss Record", icon: TrendingDown }, { to: "/farmer/score", label: "Score", icon: Award },
   { to: "/farmer/reports", label: "Reports", icon: FileBarChart },

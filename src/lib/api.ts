@@ -5,6 +5,8 @@
  */
 import { clearSession, getSession } from "./auth";
 import { appwriteApi, USE_APPWRITE } from "./appwrite";
+import { approvedBatchActivities, type CropCalendarApi } from "./crop-calendar";
+import { mockCropCalendar } from "./crop-calendar-mock";
 import { batchCode, db, save, uid, type MockDB } from "./mock-db";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 
@@ -63,7 +65,19 @@ function resource<T extends { id: string; farmer_id: string }>(path: string, tab
   };
 }
 
+const restCropCalendar: CropCalendarApi = {
+  list: (farmerId?: string) => USE_MOCK ? mockCropCalendar.list(farmerId) : http(`/crop-seasons${farmerId ? `?farmer_id=${farmerId}` : ""}`),
+  createSeason: (season, activities = []) => USE_MOCK ? mockCropCalendar.createSeason(season, activities) : http("/crop-seasons", { method: "POST", body: JSON.stringify({ season, activities }) }),
+  updateSeason: (id, season) => USE_MOCK ? mockCropCalendar.updateSeason(id, season) : http(`/crop-seasons/${id}`, { method: "PATCH", body: JSON.stringify(season) }),
+  createActivity: (activity) => USE_MOCK ? mockCropCalendar.createActivity(activity) : http("/crop-activities", { method: "POST", body: JSON.stringify(activity) }),
+  updateActivity: (id, activity) => USE_MOCK ? mockCropCalendar.updateActivity(id, activity) : http(`/crop-activities/${id}`, { method: "PATCH", body: JSON.stringify(activity) }),
+  completeActivity: (id, completion) => USE_MOCK ? mockCropCalendar.completeActivity(id, completion) : http(`/crop-activities/${id}/complete`, { method: "POST", body: JSON.stringify(completion) }),
+  skipActivity: (id, reason) => USE_MOCK ? mockCropCalendar.skipActivity(id, reason) : http(`/crop-activities/${id}/skip`, { method: "POST", body: JSON.stringify({ reason }) }),
+  setActivityApproval: (id, approved) => USE_MOCK ? mockCropCalendar.setActivityApproval(id, approved) : http(`/crop-activities/${id}/approval`, { method: "PATCH", body: JSON.stringify({ approved }) }),
+};
+
 const restApi = {
+  cropCalendar: restCropCalendar,
   harvests: {
     ...resource<Harvest>("/harvests", "harvests"),
     /** Creates a harvest with a fresh batch code and its first trace stage. */
@@ -91,14 +105,16 @@ const restApi = {
     },
   },
   /** Public buyer lookup: returns only non-private trace info. */
-  async batchHistory(code: string): Promise<{ batch_code: string; crop: string; county: string; grade: string | null; stages: Omit<Trace, "farmer_id">[] } | null> {
+  async batchHistory(code: string): Promise<{ batch_code: string; crop: string; county: string; grade: string | null; stages: Omit<Trace, "farmer_id">[]; activities: { id: string; title: string; planned_date: string; actual_date: string; notes: string }[] } | null> {
     const c = code.trim().toUpperCase();
     if (!USE_MOCK) return http<any>(`/traceability/batches/${encodeURIComponent(c)}`).catch(() => null);
     await wait(400); const D = db();
     const h = D.harvests.find((x) => x.batch_code.toUpperCase() === c); if (!h) return null;
     const farmer = D.users.find((u) => u.id === h.farmer_id);
+    const approved = approvedBatchActivities(D.crop_activities, D.crop_seasons, h);
     return { batch_code: h.batch_code, crop: h.crop, county: farmer?.county ?? "", grade: h.grade,
-      stages: D.traces.filter((t) => t.batch_code === h.batch_code).sort((a, b) => a.date.localeCompare(b.date)).map(({ farmer_id: _f, actor, ...t }) => ({ ...t, actor: actor === farmer?.name ? "Registered farmer" : actor })) };
+      stages: D.traces.filter((t) => t.batch_code === h.batch_code).sort((a, b) => a.date.localeCompare(b.date)).map(({ farmer_id: _f, actor, ...t }) => ({ ...t, actor: actor === farmer?.name ? "Registered farmer" : actor })),
+      activities: approved.map((activity) => ({ id: activity.id, title: activity.title, planned_date: activity.planned_date, actual_date: activity.actual_date!, notes: activity.actual_notes })) };
   },
 
   auth: {

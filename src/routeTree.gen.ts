@@ -27,6 +27,7 @@ import { Route as AgentRecordRouteImport } from './routes/agent.record'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as AgentSettingsRouteImport } from './routes/agent.settings'
 import { Route as FarmerIndexRouteImport } from './routes/farmer.index'
+import { Route as FarmerCalendarRouteImport } from './routes/farmer.calendar'
 import { Route as FarmerChatRouteImport } from './routes/farmer.chat'
 import { Route as FarmerInventoryRouteImport } from './routes/farmer.inventory'
 import { Route as FarmerLossesRouteImport } from './routes/farmer.losses'
@@ -127,6 +128,11 @@ const FarmerIndexRoute = FarmerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => FarmerRoute,
 } as any)
+const FarmerCalendarRoute = FarmerCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => FarmerRoute,
+} as any)
 const FarmerChatRoute = FarmerChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/agent/record': typeof AgentRecordRoute
   '/agent/register': typeof AgentRegisterRoute
   '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/calendar': typeof FarmerCalendarRoute
   '/farmer/chat': typeof FarmerChatRoute
   '/farmer/inventory': typeof FarmerInventoryRoute
   '/farmer/losses': typeof FarmerLossesRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/agent/record': typeof AgentRecordRoute
   '/agent/register': typeof AgentRegisterRoute
   '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/calendar': typeof FarmerCalendarRoute
   '/farmer/chat': typeof FarmerChatRoute
   '/farmer/inventory': typeof FarmerInventoryRoute
   '/farmer/losses': typeof FarmerLossesRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/agent/record': typeof AgentRecordRoute
   '/agent/register': typeof AgentRegisterRoute
   '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/calendar': typeof FarmerCalendarRoute
   '/farmer/chat': typeof FarmerChatRoute
   '/farmer/inventory': typeof FarmerInventoryRoute
   '/farmer/losses': typeof FarmerLossesRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/agent/record'
     | '/agent/register'
     | '/agent/settings'
+    | '/farmer/calendar'
     | '/farmer/chat'
     | '/farmer/inventory'
     | '/farmer/losses'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/agent/record'
     | '/agent/register'
     | '/agent/settings'
+    | '/farmer/calendar'
     | '/farmer/chat'
     | '/farmer/inventory'
     | '/farmer/losses'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/agent/record'
     | '/agent/register'
     | '/agent/settings'
+    | '/farmer/calendar'
     | '/farmer/chat'
     | '/farmer/inventory'
     | '/farmer/losses'
@@ -486,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmerIndexRouteImport
       parentRoute: typeof FarmerRoute
     }
+    '/farmer/calendar': {
+      id: '/farmer/calendar'
+      path: '/calendar'
+      fullPath: '/farmer/calendar'
+      preLoaderRoute: typeof FarmerCalendarRouteImport
+      parentRoute: typeof FarmerRoute
+    }
     '/farmer/chat': {
       id: '/farmer/chat'
       path: '/chat'
@@ -587,6 +606,7 @@ const AgentRouteChildren: AgentRouteChildren = {
 const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
 
 interface FarmerRouteChildren {
+  FarmerCalendarRoute: typeof FarmerCalendarRoute
   FarmerChatRoute: typeof FarmerChatRoute
   FarmerInventoryRoute: typeof FarmerInventoryRoute
   FarmerLossesRoute: typeof FarmerLossesRoute
@@ -598,6 +618,7 @@ interface FarmerRouteChildren {
 }
 
 const FarmerRouteChildren: FarmerRouteChildren = {
+  FarmerCalendarRoute: FarmerCalendarRoute,
   FarmerChatRoute: FarmerChatRoute,
   FarmerInventoryRoute: FarmerInventoryRoute,
   FarmerLossesRoute: FarmerLossesRoute,

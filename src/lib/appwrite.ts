@@ -2,7 +2,8 @@ import { clearSession, getSession } from "./auth";
 import { batchCode } from "./mock-db";
 import { questionCounty } from "./farm-assistant";
 import { getForecast } from "./weather";
-import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
+import type { AuditLog, CropActivity, CropSeason, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
+import type { ActivityDraft, CompletionDraft, CropCalendarApi, ScheduleDraft, SeasonDraft } from "./crop-calendar";
 import {
   appwriteChatHistory,
   appwriteHealthCheck,
@@ -14,6 +15,7 @@ import {
   loginAppwrite,
   manageAppwriteUsers,
   mutateAppwriteRecord,
+  mutateCropCalendar,
   registerAppwriteUser,
 } from "./appwrite.functions";
 
@@ -56,7 +58,19 @@ const records = {
   reports: resource<FarmReport>("reports"),
 };
 
+const cropCalendar: CropCalendarApi = {
+  list: async (farmerId?: string) => mutateCropCalendar({ data: { jwt: await jwt(), action: "list", ...(farmerId ? { farmerId } : {}) } }) as unknown as Promise<{ seasons: CropSeason[]; activities: CropActivity[] }>,
+  createSeason: async (season: SeasonDraft, activities: ScheduleDraft[] = []) => mutateCropCalendar({ data: { jwt: await jwt(), action: "createSeason", data: { ...season, activities } } }) as unknown as Promise<CropSeason>,
+  updateSeason: async (id: string, season: Partial<SeasonDraft>) => mutateCropCalendar({ data: { jwt: await jwt(), action: "updateSeason", id, data: season } }) as unknown as Promise<CropSeason>,
+  createActivity: async (activity: ActivityDraft) => mutateCropCalendar({ data: { jwt: await jwt(), action: "createActivity", data: activity } }) as unknown as Promise<CropActivity>,
+  updateActivity: async (id: string, activity: Partial<ActivityDraft>) => mutateCropCalendar({ data: { jwt: await jwt(), action: "updateActivity", id, data: activity } }) as unknown as Promise<CropActivity>,
+  completeActivity: async (id: string, completion: CompletionDraft) => mutateCropCalendar({ data: { jwt: await jwt(), action: "complete", id, data: completion } }) as unknown as Promise<CropActivity>,
+  skipActivity: async (id: string, reason: string) => mutateCropCalendar({ data: { jwt: await jwt(), action: "skip", id, data: { reason } } }) as unknown as Promise<CropActivity>,
+  setActivityApproval: async (id: string, approved: boolean) => mutateCropCalendar({ data: { jwt: await jwt(), action: "approval", id, data: { approved } } }) as unknown as Promise<CropActivity>,
+};
+
 export const appwriteApi = {
+  cropCalendar,
   harvests: {
     ...records.harvests,
     async createWithBatch(data: Omit<Harvest, "id" | "farmer_id" | "batch_code"> & { farmer_id?: string }) {

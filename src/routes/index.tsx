@@ -85,9 +85,9 @@ function Landing() {
           </div>
           <div className="relative mx-auto w-full max-w-sm">
             <div className="rounded-3xl border border-border bg-card p-5 shadow-soft">
-              <p className="text-sm text-muted-foreground">Welcome, Musu</p>
+              <div className="flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Welcome, Musu</p><span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">Example dashboard</span></div>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-brand p-4 text-accent-foreground"><p className="text-xs font-semibold">Quality score</p><p className="font-display text-4xl font-bold">82</p></div>
+                <div className="rounded-2xl bg-brand p-4 text-accent-foreground"><p className="text-xs font-semibold">Example quality score</p><p className="font-display text-4xl font-bold">82</p></div>
                 <div className="rounded-2xl bg-secondary p-4"><p className="text-xs font-semibold text-muted-foreground">Harvest</p><p className="font-display text-3xl font-bold">2.1t</p></div>
               </div>
               <div className="mt-4 space-y-2">

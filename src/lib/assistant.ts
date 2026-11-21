@@ -1,9 +1,10 @@
 /** Farm assistant. Uses live Open-Meteo data as its weather tool and the farmer's own records. Never invents weather values. */
 import { COUNTY_NAMES, fmtLRD } from "./constants";
 import { describe, farmTips, getForecast, weekday } from "./weather";
-import type { Expense, InventoryTx, LossRecord } from "./types";
+import { computeFarmScore } from "./score";
+import type { Expense, Harvest, InventoryTx, LossRecord, Trace } from "./types";
 
-export async function answer(q: string, ctx: { county: string; stock: InventoryTx[]; expenses: Expense[]; losses: LossRecord[] }): Promise<string> {
+export async function answer(q: string, ctx: { county: string; harvests: Harvest[]; traces: Trace[]; stock: InventoryTx[]; expenses: Expense[]; losses: LossRecord[] }): Promise<string> {
   const t = q.toLowerCase();
   const county = COUNTY_NAMES.find((c) => t.includes(c.toLowerCase())) ?? ctx.county;
   if (/weather|rain|plant|spray|sun|forecast|tomorrow|week|dry/.test(t)) {
@@ -15,6 +16,11 @@ export async function answer(q: string, ctx: { county: string; stock: InventoryT
       if (/spray/.test(t)) { const dry = f.daily.filter((d) => d.rainChance < 40); a += dry.length ? ` Best days to spray: ${dry.slice(0, 3).map((d) => weekday(d.date)).join(", ")}.` : " Rain is likely every day: spraying may wash off."; }
       return a + "\n\nTip: " + farmTips(f)[0];
     } catch { return "Sorry, I could not get weather data right now. Please try again later."; }
+  }
+  if (/quality|score/.test(t)) {
+    const score = computeFarmScore({ harvests: ctx.harvests, traces: ctx.traces, inventory: ctx.stock, expenses: ctx.expenses, losses: ctx.losses });
+    if (!score.hasRecords) return "Your quality score is 0/100 because you have no saved farm records yet. Log a harvest, expense, loss or stock movement to start.";
+    return `Your current quality score is ${score.total}/100, calculated from ${score.recordCount} saved records.\n\n• Low losses: ${score.parts.loss.toFixed(1)}/30\n• Record keeping: ${score.parts.completeness.toFixed(1)}/25\n• Harvest grade: ${score.parts.grade.toFixed(1)}/20\n• Traceability: ${score.parts.trace.toFixed(1)}/25\n\nYou have recorded ${score.harvestedKg} kg harvested, ${score.lostKg} kg lost, and ${score.tracedBatches} of ${score.batchCount} batches fully traced.`;
   }
   if (/stock|inventory|store|bags/.test(t)) {
     const lv = ctx.stock.reduce<Record<string, number>>((a, x) => ({ ...a, [`${x.item} (${x.unit})`]: (a[`${x.item} (${x.unit})`] ?? 0) + (x.type === "in" ? x.quantity : -x.quantity) }), {});

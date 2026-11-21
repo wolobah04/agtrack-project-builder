@@ -21,3 +21,6 @@
 - [x] Show the real record totals behind the farmer's score and its historical trend.
 - [x] Give Groq the identical score, component breakdown and underlying record totals.
 - [x] Test empty farms, real score changes and an AI quality-score answer.
+- [x] Label the public example score and keep it separate from real farmer data.
+- [x] Use the shared real-record score in the browser-demo assistant and REST Ministry fallback.
+- [x] Re-run score, assistant, fallback and routing checks after the full-app sweep.

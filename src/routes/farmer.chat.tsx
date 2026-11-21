@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/agtrack/ui";
 import { useSession } from "@/hooks/use-session";
-import { useRecords } from "@/hooks/use-farm-data";
+import { useFarmScore } from "@/hooks/use-score";
 import { answer } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
 import { appwriteAssistant, appwriteChat, USE_APPWRITE } from "@/lib/appwrite";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/farmer/chat")({
 type Msg = { role: "user" | "bot"; text: string };
 const suggestions = ["What is my quality score and how can I improve it?", "What is today's rain probability? Can I water my crops?", "Should I plant rice this week?", "Best day to spray?", "How much stock do I have?"];
 function Chat() {
-  const s = useSession(); const stock = useRecords("inventory"), exp = useRecords("expenses"), loss = useRecords("losses");
+  const s = useSession(); const farm = useFarmScore();
   const key = `agtrack-chat-${s?.user.id}`; const [msgs, setMsgs] = useState<Msg[]>([]); const [text, setText] = useState(""); const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -48,14 +48,15 @@ function Chat() {
         a = result.reply;
         await appwriteChat.add("bot", a);
       } else {
-        a = await answer(question, { county: s.user.county, stock: stock.data ?? [], expenses: exp.data ?? [], losses: loss.data ?? [] });
+        if (!farm.score) throw new Error(farm.error ? "Could not load the records needed for your quality score." : "Your farm records are still loading. Please try again in a moment.");
+        a = await answer(question, { county: s.user.county, harvests: farm.harvests, traces: farm.traces, stock: farm.inventory, expenses: farm.expenses, losses: farm.losses });
       }
       setMsgs((m) => [...m, { role: "bot", text: a }]);
     } catch (x) { toast.error((x as Error).message); } finally { setTyping(false); }
   };
   return (
     <>
-      <PageHeader title="Farm Assistant" subtitle={USE_APPWRITE ? "AI answers using live weather, your quality score and farm records" : "Ask about weather, your stock, costs or crops"} action={msgs.length ? <Button variant="ghost" size="sm" onClick={async () => { if (USE_APPWRITE) await appwriteChat.clear(); setMsgs([]); }}><Trash2 />Clear</Button> : undefined} />
+      <PageHeader title="Farm Assistant" subtitle={USE_APPWRITE ? "AI answers using live weather, your quality score and farm records" : "Ask about weather, your quality score, stock, costs or crops"} action={msgs.length ? <Button variant="ghost" size="sm" onClick={async () => { if (USE_APPWRITE) await appwriteChat.clear(); setMsgs([]); }}><Trash2 />Clear</Button> : undefined} />
       <div className="flex h-[calc(100vh-15rem)] min-h-96 flex-col rounded-2xl border border-border bg-card shadow-soft">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {!msgs.length && <div className="flex flex-col items-center gap-4 py-8 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-brand text-accent-foreground"><Sprout /></span><p className="max-w-md text-muted-foreground">Hi! Ask about rain, watering, planting, stock, costs or your quality score. I’ll use live weather and your saved farm records.</p>

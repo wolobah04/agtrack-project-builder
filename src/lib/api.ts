@@ -158,8 +158,14 @@ const restApi = {
   },
   async auditLog(): Promise<AuditLog[]> { await wait(); return [...db().audit]; },
   async health(): Promise<boolean> { if (USE_MOCK) return true; try { await http("/utils/health-check/"); return true; } catch { return false; } },
-  /** National aggregates (no dedicated endpoint yet: derived on the frontend). */
-  async national(): Promise<Pick<MockDB, "users" | "harvests" | "losses" | "traces" | "expenses" | "inventory">> {
+  /** National aggregates are derived from the same backend records in every mode. */
+  async national(): Promise<{ users: User[]; harvests: Harvest[]; losses: LossRecord[]; traces: Trace[]; expenses: Expense[]; inventory: InventoryTx[] }> {
+    if (!USE_MOCK) {
+      const [users, harvests, losses, traces, expenses, inventory] = await Promise.all([
+        restApi.users.list(), restApi.harvests.all(), restApi.losses.all(), restApi.traces.all(), restApi.expenses.all(), restApi.inventory.all(),
+      ]);
+      return { users, harvests, losses, traces, expenses, inventory };
+    }
     await wait(); const D = db(); return { users: D.users, harvests: D.harvests, losses: D.losses, traces: D.traces, expenses: D.expenses, inventory: D.inventory };
   },
 };

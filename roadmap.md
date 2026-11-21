@@ -31,3 +31,9 @@
 - [x] Verify a signed-out buyer can open batch history at `https://agtrack.online` without a Lovable login.
 - [x] Republish with buyer QR codes pointed at the verified `https://agtrack.online` domain.
 - [x] Sweep all buyer QR, lookup, internal-link and database-read paths for login-free public batch history.
+
+# Persistent login and authentication navigation
+
+- [x] Keep saved sessions across refreshes until explicit sign-out and hide guest links for active users.
+- [x] Sweep public pages, role dashboards, fallback clients, and Appwrite session functions for the same rule.
+- [x] Re-test sign-in persistence, role navigation, and every sign-out path; clean up temporary accounts.

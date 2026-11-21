@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { api } from "@/lib/api";
+import { homeFor } from "@/lib/auth";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -70,6 +72,7 @@ function Lookup() {
 }
 
 function Landing() {
+  const session = useSession();
   return (
     <PublicLayout>
       <section id="home" className="relative overflow-hidden bg-hero">
@@ -79,7 +82,8 @@ function Landing() {
             <h1 className="mt-5 text-4xl font-extrabold leading-tight sm:text-6xl">Record your farm. <span className="text-brand">Prove your quality.</span></h1>
             <p className="mt-5 max-w-md text-lg text-muted-foreground">AgTrack keeps your harvests, costs and losses in one place, and traces every bag from your farm to the market.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild variant="hero" size="lg"><Link to="/signup">Get Started <ArrowRight /></Link></Button>
+              {session ? <Button asChild variant="hero" size="lg"><Link to={homeFor(session.user.role)}>Open my dashboard <ArrowRight /></Link></Button>
+                : <Button asChild variant="hero" size="lg"><Link to="/signup">Get Started <ArrowRight /></Link></Button>}
               <Button asChild variant="outline" size="lg"><a href="#lookup">Check a batch</a></Button>
             </div>
           </div>

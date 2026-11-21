@@ -1,20 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Send, Sprout, Trash2 } from "lucide-react";
+import { LoaderCircle, Mic, Send, Sprout, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/agtrack/ui";
 import { useSession } from "@/hooks/use-session";
 import { useFarmScore } from "@/hooks/use-score";
+import { useSpeechToText } from "@/hooks/use-speech-to-text";
 import { answer } from "@/lib/assistant";
 import { cn } from "@/lib/utils";
+import { appendTranscript, formatRecordingTime, MAX_RECORDING_SECONDS } from "@/lib/speech";
 import { appwriteAssistant, appwriteChat, USE_APPWRITE } from "@/lib/appwrite";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/farmer/chat")({
   head: () => ({ meta: [
     { title: "AI Farm Assistant — AgTrack" },
-    { name: "description", content: "Ask AgTrack's AI farm assistant about live county weather, watering, crops, stock, costs, losses and your real quality score." },
+    { name: "description", content: "Ask AgTrack's AI farm assistant by voice or text about live county weather, watering, crops, stock, costs, losses and your real quality score." },
     { property: "og:title", content: "AI Farm Assistant — AgTrack" },
     { property: "og:description", content: "Practical farm answers grounded in live Open-Meteo weather and your own AgTrack records." },
     { property: "og:type", content: "website" },
@@ -29,6 +31,11 @@ function Chat() {
   const s = useSession(); const farm = useFarmScore();
   const key = `agtrack-chat-${s?.user.id}`; const [msgs, setMsgs] = useState<Msg[]>([]); const [text, setText] = useState(""); const [typing, setTyping] = useState(false);
   const end = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const speech = useSpeechToText((transcript) => {
+    setText((current) => appendTranscript(current, transcript));
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  });
   useEffect(() => {
     if (!s) return;
     if (USE_APPWRITE) appwriteChat.list().then(setMsgs).catch((x) => toast.error((x as Error).message));
@@ -37,7 +44,7 @@ function Chat() {
   useEffect(() => { if (s && !USE_APPWRITE) localStorage.setItem(key, JSON.stringify(msgs.slice(-50))); end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, s, key]);
   const send = async (q: string) => {
     const question = q.trim();
-    if (!question || typing || !s) return;
+    if (!question || typing || speech.state !== "idle" || !s) return;
     const history = msgs.slice(-12);
     setText(""); setMsgs((m) => [...m, { role: "user", text: question }]); setTyping(true);
     try {
@@ -56,19 +63,42 @@ function Chat() {
   };
   return (
     <>
-      <PageHeader title="Farm Assistant" subtitle={USE_APPWRITE ? "AI answers using live weather, your quality score and farm records" : "Ask about weather, your quality score, stock, costs or crops"} action={msgs.length ? <Button variant="ghost" size="sm" onClick={async () => { if (USE_APPWRITE) await appwriteChat.clear(); setMsgs([]); }}><Trash2 />Clear</Button> : undefined} />
+      <PageHeader title="Farm Assistant" subtitle={USE_APPWRITE ? "Type or speak — AI answers use live weather, your quality score and farm records" : "Ask about weather, your quality score, stock, costs or crops"} action={msgs.length ? <Button variant="ghost" size="sm" onClick={async () => { if (USE_APPWRITE) await appwriteChat.clear(); setMsgs([]); }}><Trash2 />Clear</Button> : undefined} />
       <div className="flex h-[calc(100vh-15rem)] min-h-96 flex-col rounded-2xl border border-border bg-card shadow-soft">
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {!msgs.length && <div className="flex flex-col items-center gap-4 py-8 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-brand text-accent-foreground"><Sprout /></span><p className="max-w-md text-muted-foreground">Hi! Ask about rain, watering, planting, stock, costs or your quality score. I’ll use live weather and your saved farm records.</p>
+          {!msgs.length && <div className="flex flex-col items-center gap-4 py-8 text-center"><span className="grid size-14 place-items-center rounded-2xl bg-brand text-accent-foreground"><Sprout /></span><p className="max-w-md text-muted-foreground">Hi! Type a question or tap the microphone to speak. I’ll use live weather and your saved farm records to answer.</p>
             <div className="flex flex-wrap justify-center gap-2">{suggestions.map((x) => <button key={x} onClick={() => send(x)} className="rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary">{x}</button>)}</div></div>}
-          {msgs.map((m, i) => <div key={i} className={cn("max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm", m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted")}>{m.text}</div>)}
+          {msgs.map((m, i) => <div key={i} data-chat-message={m.role} className={cn("max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm", m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-muted")}>{m.text}</div>)}
           {typing && <div className="flex max-w-[85%] items-center gap-3 rounded-2xl bg-muted px-4 py-3"><div className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="size-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: `${i * 0.15}s` }} />)}</div><span className="text-xs text-muted-foreground">Checking live weather and farm records…</span></div>}
           <div ref={end} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2 border-t border-border p-3">
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question…" className="h-12" maxLength={500} aria-label="Message" />
-          <Button type="submit" size="icon" className="size-12" disabled={typing} aria-label="Send"><Send /></Button>
-        </form>
+        <div className="border-t border-border">
+          {speech.state !== "idle" && (
+            <div className="flex min-h-10 items-center gap-2 border-b border-border bg-muted/50 px-4 py-2 text-xs font-semibold" aria-live="polite">
+              {speech.state === "recording" ? <>
+                <span className="size-2 animate-pulse rounded-full bg-destructive" />
+                <span className="flex-1">Listening… {formatRecordingTime(speech.seconds)} / {formatRecordingTime(MAX_RECORDING_SECONDS)}</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={speech.cancel}>Cancel</Button>
+              </> : <><LoaderCircle className="size-4 animate-spin text-primary" /><span>Turning your voice into editable text…</span></>}
+            </div>
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="flex gap-2 p-3">
+            <Input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question or use the microphone…" className="h-12" maxLength={500} aria-label="Message" disabled={speech.state === "transcribing"} />
+            <Button
+              type="button"
+              size="icon"
+              variant={speech.state === "recording" ? "destructive" : "outline"}
+              className={cn("size-12 shrink-0 rounded-full", speech.state === "recording" && "shadow-glow")}
+              onClick={speech.state === "recording" ? speech.stop : speech.start}
+              disabled={typing || speech.state === "transcribing"}
+              aria-label={speech.state === "recording" ? "Stop recording and transcribe" : speech.state === "transcribing" ? "Transcribing voice message" : "Record voice message"}
+              title={speech.state === "recording" ? "Stop and transcribe" : "Speak your question"}
+            >
+              {speech.state === "recording" ? <Square className="fill-current" /> : speech.state === "transcribing" ? <LoaderCircle className="animate-spin" /> : <Mic />}
+            </Button>
+            <Button type="submit" size="icon" className="size-12 shrink-0" disabled={typing || speech.state !== "idle" || !text.trim()} aria-label="Send"><Send /></Button>
+          </form>
+        </div>
       </div>
     </>
   );

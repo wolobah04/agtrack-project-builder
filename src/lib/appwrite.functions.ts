@@ -538,6 +538,66 @@ export const askFarmAssistant = createServerFn({ method: "POST" })
     return { reply, weatherCounty, weatherLive: forecast !== null };
   });
 
+const speechInput = z.object({
+  jwt: z.string().min(1),
+  audioBase64: z.string().min(10).max(6_000_000),
+  mimeType: z.enum(["audio/webm", "audio/ogg", "audio/mp4"]),
+});
+type GroqTranscriptionResponse = { text?: string; error?: { message?: string; code?: string } };
+
+export const transcribeFarmAudio = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => speechInput.parse(input))
+  .handler(async ({ data }) => {
+    const config = serverConfig();
+    const actor = await getActor(config, data.jwt);
+    if (actor.role !== "farmer") throw new HttpError("Voice transcription is available to farmer accounts", 403);
+    const apiKey = process.env["GROQ_API_KEY"];
+    if (!apiKey) throw new Error("Voice transcription is not connected yet. Please contact the administrator.");
+
+    let audio: Uint8Array;
+    try {
+      const binary = atob(data.audioBase64);
+      if (binary.length > 4_500_000) throw new HttpError("Please keep voice messages under one minute", 413);
+      audio = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) audio[index] = binary.charCodeAt(index);
+    } catch (error) {
+      if (error instanceof HttpError) throw error;
+      throw new HttpError("The recording could not be read", 400);
+    }
+
+    const extension = data.mimeType === "audio/ogg" ? "ogg" : data.mimeType === "audio/mp4" ? "mp4" : "webm";
+    const form = new FormData();
+    form.append("file", new File([audio.buffer as ArrayBuffer], `farm-question.${extension}`, { type: data.mimeType }));
+    form.append("model", "whisper-large-v3-turbo");
+    form.append("response_format", "json");
+    form.append("temperature", "0");
+    form.append("prompt", "A Liberian farmer asking about crops, weather, planting, harvests, stock, farm costs, losses, or quality score.");
+
+    let response: Response;
+    try {
+      response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch (error) {
+      console.error("Groq transcription could not be completed", error instanceof Error ? error.message : "unknown error");
+      throw new Error("Voice transcription could not be reached. Please try again or type your question.");
+    }
+
+    const result = await response.json().catch(() => ({})) as GroqTranscriptionResponse;
+    if (!response.ok) {
+      console.error("Groq transcription returned an error", response.status, result.error?.code ?? "unknown");
+      if (response.status === 401 || response.status === 403) throw new Error("Groq rejected the configured API key. Please contact the administrator.");
+      if (response.status === 429) throw new Error("Voice transcription is busy right now. Please wait a moment and try again.");
+      throw new Error("Your voice message could not be transcribed. Please try again or type your question.");
+    }
+    const text = result.text?.trim();
+    if (!text) throw new Error("I couldn't hear a clear question. Please try again or type it instead.");
+    return { text: text.slice(0, 500) };
+  });
+
 const chatInput = z.object({ jwt: z.string(), action: z.enum(["list", "add", "clear"]), role: z.enum(["user", "bot"]).optional(), text: z.string().trim().min(1).max(4000).optional() });
 export const appwriteChatHistory = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => chatInput.parse(input))

@@ -62,3 +62,9 @@
 - [x] Search users by name, phone, county, or role and open matching accounts in Management.
 - [x] Search harvest batch codes and open their public buyer traceability history.
 - [x] Add filtering to Management and test the search rules and signed-in flow.
+
+# Farmer voice messages
+
+- [x] Add microphone recording, clear recording states, and an editable transcript alongside text chat.
+- [x] Transcribe audio securely with Groq without exposing the API key in the browser.
+- [x] Test microphone permission, transcription, text sending, and cleanup of temporary records.

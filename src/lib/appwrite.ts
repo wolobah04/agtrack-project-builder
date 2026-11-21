@@ -17,6 +17,7 @@ import {
   mutateAppwriteRecord,
   mutateCropCalendar,
   registerAppwriteUser,
+  transcribeFarmAudio,
 } from "./appwrite.functions";
 
 const PROJECT_ID = (import.meta.env["VITE_APPWRITE_PROJECT_ID"] as string | undefined) ?? "6b011308003b57f341b6";
@@ -157,6 +158,9 @@ export const appwriteAssistant = {
     // Browser requests avoid the shared server-IP rate limit that can block Open-Meteo on Workers.
     const forecast = await getForecast(county).catch(() => null);
     return askFarmAssistant({ data: { jwt: token, message, history, forecast } });
+  },
+  async transcribe(audioBase64: string, mimeType: "audio/webm" | "audio/ogg" | "audio/mp4") {
+    return transcribeFarmAudio({ data: { jwt: await jwt(), audioBase64, mimeType } });
   },
 };
 

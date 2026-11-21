@@ -29,4 +29,4 @@
 
 - [x] Generate QR codes with the permanent public app address instead of the private preview address.
 - [x] Verify a signed-out buyer can open batch history at `https://agtrack.online` without a Lovable login.
-- [ ] Republish with buyer QR codes pointed at the verified `https://agtrack.online` domain.
+- [x] Republish with buyer QR codes pointed at the verified `https://agtrack.online` domain.

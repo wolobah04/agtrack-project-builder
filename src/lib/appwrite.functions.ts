@@ -3,7 +3,7 @@ import { Query } from "appwrite";
 import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
-import { buildGroqMessages, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
+import { buildGroqMessages, cleanAssistantReply, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
 import type { CropActivity, CropSeason, Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
 import { approvedBatchActivities, completionExpense, completionUpdate, nextRecurringActivity, seasonDateError } from "./crop-calendar";
@@ -543,7 +543,7 @@ export const askFarmAssistant = createServerFn({ method: "POST" })
       if (response.status === 429) throw new Error("The AI assistant is busy right now. Please wait a moment and try again.");
       throw new Error("The AI assistant could not answer right now. Please try again.");
     }
-    const reply = result.choices?.[0]?.message?.content?.trim();
+    const reply = cleanAssistantReply(result.choices?.[0]?.message?.content ?? "");
     if (!reply) throw new Error("The AI assistant returned an empty answer. Please try again.");
     return { reply, weatherCounty, weatherLive: forecast !== null };
   });

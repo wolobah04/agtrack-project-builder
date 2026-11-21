@@ -16,8 +16,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { createSeasonSchedule, seasonDateError, suggestedSeasonEnd } from "@/lib/crop-calendar";
-import { EXPENSE_CATEGORIES, FARM_TYPES, todayISO } from "@/lib/constants";
+import { EXPENSE_CATEGORIES, todayISO } from "@/lib/constants";
 import type { CropActivity, CropSeason, Harvest } from "@/lib/types";
+
+const SEASON_CROPS = ["Rice", "Cassava", "Vegetables", "Maize", "Pepper", "Plantain", "Okra", "Groundnut", "Sweet Potato", "Cocoa", "Coffee", "Rubber", "Oil Palm"];
 
 type DialogProps = { open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void };
 type SeasonForm = {
@@ -146,18 +148,18 @@ export function SeasonDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="season-crop">Crop</Label>
-              <Input
-                id="season-crop"
-                list="crop-options"
-                value={form.crop}
-                onChange={(e) => set("crop", e.target.value)}
-                required
-              />
-              <datalist id="crop-options">
-                {[...FARM_TYPES, "Maize", "Pepper", "Plantain", "Okra"].map((crop) => (
-                  <option key={crop} value={crop} />
-                ))}
-              </datalist>
+              <Select value={form.crop} onValueChange={(v) => set("crop", v)}>
+                <SelectTrigger id="season-crop">
+                  <SelectValue placeholder="Select a crop" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set([...SEASON_CROPS, ...(form.crop ? [form.crop] : [])])).map((crop) => (
+                    <SelectItem key={crop} value={crop}>
+                      {crop}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="season-variety">Variety (optional)</Label>

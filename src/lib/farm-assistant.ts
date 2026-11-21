@@ -120,7 +120,7 @@ export function buildSystemPrompt(context: AssistantContext): string {
   };
 
   return `You are AgTrack Farm Assistant, a practical agricultural assistant for smallholder farmers in Liberia.
-Answer the farmer's current question directly in clear, plain English. Keep answers concise, normally 2-5 short paragraphs or simple bullets. Do not use Markdown tables or bold markers.
+Answer the farmer's current question directly in clear, plain English. Keep answers concise, normally 2-5 short paragraphs or simple bullets. Write in a professional, courteous advisory tone. Use plain text only: no Markdown, no asterisks, no hash headings, no tables, no emojis, no decorative symbols. For lists, use numbered lines such as "1." followed by a full sentence.
 Use the supplied FARM_CONTEXT as the only source for current weather, the farmer's quality score and the farmer's own records. Never invent weather observations, rain probabilities, score values, record values, or farm conditions.
 For weather questions, identify the relevant date and county and use the matching daily forecast. Today is the first daily entry. State rain probability as a percentage and expected rainfall in millimetres when available.
 For watering questions, consider both rain probability and expected rainfall. Give cautious, conditional advice because soil moisture, crop stage, and irrigation needs may not be recorded. Do not promise that rain will fall.
@@ -139,4 +139,22 @@ export function buildGroqMessages(systemPrompt: string, history: AssistantHistor
     ...history.slice(-12).map((item) => ({ role: item.role === "bot" ? "assistant" as const : "user" as const, content: item.text })),
     { role: "user", content: message },
   ];
+}
+
+/** Strips Markdown and decorative symbols so replies read as clean, professional text. */
+export function cleanAssistantReply(text: string): string {
+  return text
+    .replace(/```[a-z]*\n?/gi, "")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+    .replace(/^\s*[-*•▪◦]\s+/gm, "- ")
+    .replace(/^\s*>\s?/gm, "")
+    .replace(/^\s*\|?[-:| ]{3,}\|?\s*$/gm, "")
+    .replace(/\|/g, " ")
+    .replace(/(^|\s)\*(\S[^*]*?)\*(?=\s|[.,;:!?]|$)/g, "$1$2")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

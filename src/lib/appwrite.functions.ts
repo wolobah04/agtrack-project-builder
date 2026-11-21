@@ -6,7 +6,7 @@ import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
 import { buildGroqMessages, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
 import type { CropActivity, CropSeason, Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
-import { approvedBatchActivities, completionExpense, completionUpdate, nextRecurringActivity } from "./crop-calendar";
+import { approvedBatchActivities, completionExpense, completionUpdate, nextRecurringActivity, seasonDateError } from "./crop-calendar";
 
 const PROJECT_FALLBACK = "6b011308003b57f341b6";
 type Config = { endpoint: string; projectId: string; apiKey: string; databaseId: string };
@@ -351,8 +351,12 @@ export const getAppwriteBatchHistory = createServerFn({ method: "POST" })
 
 const seasonFields = z.object({
   name: z.string().trim().min(2).max(160), crop: z.string().trim().min(1).max(100), variety: z.string().trim().max(120),
-  plot: z.string().trim().min(1).max(200), planting_date: dateField, batch_code: z.string().max(50).nullable(), status: z.enum(["active", "completed"]),
+  plot: z.string().trim().min(1).max(200), planting_date: dateField, end_date: dateField.nullable(), batch_code: z.string().max(50).nullable(), status: z.enum(["active", "completed"]),
 });
+
+function assertSeasonDates(plantingDate: string, endDate: string | null | undefined) {
+  if (seasonDateError(plantingDate, endDate ?? "")) throw new HttpError("The ending date cannot be before the planting date.", 400);
+}
 const scheduleFields = z.object({
   title: z.string().trim().min(1).max(160), planned_date: dateField, planned_end_date: dateField.nullable(),
   notes: z.string().max(1000), recurrence_days: z.number().int().positive().max(365).nullable(),
@@ -393,6 +397,7 @@ export const mutateCropCalendar = createServerFn({ method: "POST" })
     if (data.action === "createSeason") {
       const { activities: rawActivities, ...seasonInput } = data.data ?? {};
       const clean = seasonFields.parse(seasonInput);
+      assertSeasonDates(clean.planting_date, clean.end_date);
       const drafts = z.array(scheduleFields).max(100).parse(rawActivities ?? []);
       const owner = actor.role === "farmer" ? actor.id : typeof seasonInput["farmer_id"] === "string" ? seasonInput["farmer_id"] : "";
       await assertFarmerAccess(config, actor, owner);
@@ -405,7 +410,12 @@ export const mutateCropCalendar = createServerFn({ method: "POST" })
       if (!data.id) throw new HttpError("Record ID is required", 400);
       const existing = await getRow(config, "crop_seasons", data.id);
       await assertFarmerAccess(config, actor, String(existing["farmer_id"]));
-      return updateRow(config, "crop_seasons", data.id, seasonFields.partial().parse(data.data ?? {}));
+      const patch = seasonFields.partial().parse(data.data ?? {});
+      assertSeasonDates(
+        patch["planting_date"] ?? String(existing["planting_date"] ?? ""),
+        "end_date" in patch ? patch["end_date"] : (existing["end_date"] as string | null),
+      );
+      return updateRow(config, "crop_seasons", data.id, patch);
     }
     if (data.action === "createActivity") {
       const clean = activityFields.parse(data.data ?? {});

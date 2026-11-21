@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
-import { createSeasonSchedule } from "@/lib/crop-calendar";
+import { createSeasonSchedule, seasonDateError, suggestedSeasonEnd } from "@/lib/crop-calendar";
 import { EXPENSE_CATEGORIES, FARM_TYPES, todayISO } from "@/lib/constants";
 import type { CropActivity, CropSeason, Harvest } from "@/lib/types";
 
@@ -26,6 +26,7 @@ type SeasonForm = {
   variety: string;
   plot: string;
   planting_date: string;
+  end_date: string;
   batch_code: string;
   status: "active" | "completed";
   mode: string;
@@ -36,6 +37,7 @@ const emptySeason: SeasonForm = {
   variety: "",
   plot: "",
   planting_date: todayISO(),
+  end_date: "",
   batch_code: "none",
   status: "active",
   mode: "template",
@@ -50,8 +52,10 @@ export function SeasonDialog({
 }: DialogProps & { season: CropSeason | null; harvests: Harvest[] }) {
   const [form, setForm] = useState(emptySeason);
   const [saving, setSaving] = useState(false);
+  const [endTouched, setEndTouched] = useState(false);
   useEffect(() => {
     if (!open) return;
+    setEndTouched(false);
     setForm(
       season
         ? {
@@ -60,19 +64,39 @@ export function SeasonDialog({
             variety: season.variety,
             plot: season.plot,
             planting_date: season.planting_date,
+            end_date:
+              season.end_date ?? suggestedSeasonEnd(season.crop, season.planting_date),
             batch_code: season.batch_code ?? "none",
             status: season.status,
             mode: "empty",
           }
-        : { ...emptySeason, planting_date: todayISO() },
+        : {
+            ...emptySeason,
+            planting_date: todayISO(),
+            end_date: suggestedSeasonEnd("Rice", todayISO()),
+          },
     );
   }, [open, season]);
   const set = (key: keyof typeof emptySeason, value: string) =>
-    setForm((old) => ({ ...old, [key]: value }));
+    setForm((old) => {
+      const next = { ...old, [key]: value };
+      if (!endTouched && (key === "crop" || key === "planting_date") && next.planting_date)
+        next.end_date = suggestedSeasonEnd(next.crop, next.planting_date);
+      return next;
+    });
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.name.trim() || !form.crop.trim() || !form.plot.trim()) {
       toast.error("Season name, crop, and plot are required.");
+      return;
+    }
+    if (!form.end_date) {
+      toast.error("Add an ending date for this season.");
+      return;
+    }
+    const dateError = seasonDateError(form.planting_date, form.end_date);
+    if (dateError) {
+      toast.error(dateError);
       return;
     }
     setSaving(true);
@@ -83,6 +107,7 @@ export function SeasonDialog({
         variety: form.variety.trim(),
         plot: form.plot.trim(),
         planting_date: form.planting_date,
+        end_date: form.end_date,
         batch_code: form.batch_code === "none" ? null : form.batch_code,
         status: form.status,
       };
@@ -165,6 +190,54 @@ export function SeasonDialog({
                 required
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="season-end-date">Ending date</Label>
+              <Input
+                id="season-end-date"
+                type="date"
+                min={form.planting_date}
+                value={form.end_date}
+                onChange={(e) => {
+                  setEndTouched(true);
+                  set("end_date", e.target.value);
+                }}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Expected harvest or season close. Suggested from your crop — change it any time.
+              </p>
+            </div>
+            {!season && (
+              <div className="space-y-1.5">
+                <Label>Starting schedule</Label>
+                <Select value={form.mode} onValueChange={(value) => set("mode", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="template">Editable crop template</SelectItem>
+                    <SelectItem value="empty">Empty calendar</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Template dates are planning aids. You can reschedule or skip every activity.
+                </p>
+              </div>
+            )}
+            {season && (
+              <div className="space-y-1.5">
+                <Label>Season status</Label>
+                <Select value={form.status} onValueChange={(value) => set("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Linked harvest batch (optional)</Label>
@@ -185,37 +258,6 @@ export function SeasonDialog({
               Only approved work from this season can appear on the linked batch passport.
             </p>
           </div>
-          {!season && (
-            <div className="space-y-1.5">
-              <Label>Starting schedule</Label>
-              <Select value={form.mode} onValueChange={(value) => set("mode", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="template">Editable crop template</SelectItem>
-                  <SelectItem value="empty">Empty calendar</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Template dates are planning aids. You can reschedule or skip every activity.
-              </p>
-            </div>
-          )}
-          {season && (
-            <div className="space-y-1.5">
-              <Label>Season status</Label>
-              <Select value={form.status} onValueChange={(value) => set("status", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           <Button type="submit" variant="hero" className="w-full" disabled={saving}>
             {saving && <Loader2 className="animate-spin" />}
             {season ? "Save season" : "Start season"}

@@ -5,6 +5,9 @@ import {
   completionExpense,
   createSeasonSchedule,
   nextRecurringActivity,
+  seasonDateError,
+  seasonEndLabel,
+  suggestedSeasonEnd,
 } from "./crop-calendar";
 import type { CropActivity, CropSeason } from "./types";
 
@@ -16,6 +19,7 @@ const season: CropSeason = {
   variety: "NERICA-L19",
   plot: "North plot",
   planting_date: "2026-11-03",
+  end_date: "2027-03-03",
   batch_code: "LR-RIC-1001",
   status: "active",
   created_at: "2026-10-01",
@@ -54,6 +58,27 @@ describe("crop season schedules", () => {
   it("marks Tuesday's planned weeding due on Tuesday and overdue on Wednesday", () => {
     expect(activityDueState(activity, "2026-11-17")).toBe("due");
     expect(activityDueState(activity, "2026-11-18")).toBe("overdue");
+  });
+
+  it("suggests the season ending date from the crop's harvest window", () => {
+    expect(suggestedSeasonEnd("Rice", "2026-11-03")).toBe("2027-03-03");
+    expect(suggestedSeasonEnd("Cassava", "2026-11-03")).toBe("2027-09-29");
+    expect(suggestedSeasonEnd("Mushrooms", "2026-11-03")).toBe("2027-02-15");
+  });
+
+  it("rejects an ending date earlier than the planting date", () => {
+    expect(seasonDateError("2026-11-03", "2026-10-20")).toBe(
+      "The ending date cannot be before the planting date.",
+    );
+    expect(seasonDateError("2026-11-03", "2026-11-03")).toBeNull();
+    expect(seasonDateError("2026-11-03", "")).toBeNull();
+  });
+
+  it("describes how much season time is left", () => {
+    expect(seasonEndLabel("2026-11-10", "2026-11-03")).toBe("7 days to go");
+    expect(seasonEndLabel("2026-11-03", "2026-11-03")).toBe("Ending today");
+    expect(seasonEndLabel("2026-11-02", "2026-11-03")).toBe("1 day past");
+    expect(seasonEndLabel(null, "2026-11-03")).toBeNull();
   });
 
   it("schedules the next recurring field check seven days after the original plan", () => {

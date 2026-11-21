@@ -69,3 +69,10 @@
 - [x] Transcribe audio securely with Groq without exposing the API key in the browser.
 - [x] Test microphone permission, transcription, text sending, and cleanup of temporary records.
 - [x] Automatically submit voice transcripts to the AI and verify an answer without tapping Send.
+
+# Season ending date
+
+- [x] Add an ending date to the season form, stored with each crop season.
+- [x] Suggest the ending date from the crop's harvest window and keep it editable.
+- [x] Show the ending date and time remaining on the calendar page.
+- [x] Test the date rules, saving, and cleanup of temporary records.

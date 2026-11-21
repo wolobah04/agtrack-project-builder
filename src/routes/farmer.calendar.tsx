@@ -45,7 +45,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInvalidate, useRecords } from "@/hooks/use-farm-data";
 import { api } from "@/lib/api";
-import { activityDueState, type DueState } from "@/lib/crop-calendar";
+import { activityDueState, seasonEndLabel, type DueState } from "@/lib/crop-calendar";
 import { fmtDate, fmtLRD, todayISO } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { CropActivity, CropSeason } from "@/lib/types";
@@ -162,6 +162,7 @@ function CropCalendarPage() {
   const skipped = activities
     .filter((activity) => activity.status === "skipped")
     .sort((a, b) => b.planned_date.localeCompare(a.planned_date));
+  const endNote = selected?.end_date ? seasonEndLabel(selected.end_date, today) : null;
 
   const entry = (activity: CropActivity, compact = false) => {
     const state = activityDueState(activity, today);
@@ -309,6 +310,12 @@ function CropCalendarPage() {
                 </span>
                 <span>{selected.plot}</span>
                 <span>Planting: {fmtDate(selected.planting_date)}</span>
+                {selected.end_date && (
+                  <span>
+                    Ending: {fmtDate(selected.end_date)}
+                    {endNote ? ` · ${endNote}` : ""}
+                  </span>
+                )}
                 <span>
                   {selected.batch_code ? `Batch: ${selected.batch_code}` : "No batch linked"}
                 </span>

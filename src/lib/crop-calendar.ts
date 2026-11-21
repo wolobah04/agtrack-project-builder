@@ -2,7 +2,7 @@ import type { CropActivity, CropSeason, Expense, Harvest } from "./types";
 
 export type SeasonDraft = Pick<
   CropSeason,
-  "name" | "crop" | "variety" | "plot" | "planting_date" | "batch_code" | "status"
+  "name" | "crop" | "variety" | "plot" | "planting_date" | "end_date" | "batch_code" | "status"
 >;
 export type ActivityDraft = Pick<
   CropActivity,
@@ -230,6 +230,35 @@ export function createSeasonSchedule(crop: string, plantingDate: string): Schedu
 }
 
 export type DueState = "completed" | "skipped" | "overdue" | "due" | "upcoming";
+export function suggestedSeasonEnd(crop: string, plantingDate: string): string {
+  const days = cropTemplate(crop).reduce(
+    (latest, item) => Math.max(latest, item.offset + (item.duration ?? 0)),
+    0,
+  );
+  return addDaysISO(plantingDate, days);
+}
+
+export function seasonDateError(plantingDate: string, endDate: string): string | null {
+  if (!plantingDate || !endDate) return null;
+  return endDate < plantingDate ? "The ending date cannot be before the planting date." : null;
+}
+
+export function daysBetweenISO(from: string, to: string): number {
+  const start = Date.parse(`${from}T00:00:00.000Z`);
+  const end = Date.parse(`${to}T00:00:00.000Z`);
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  return Math.round((end - start) / 86_400_000);
+}
+
+export function seasonEndLabel(endDate: string | null, today: string): string | null {
+  if (!endDate) return null;
+  const days = daysBetweenISO(today, endDate);
+  if (days === 0) return "Ending today";
+  const amount = Math.abs(days);
+  const unit = amount === 1 ? "day" : "days";
+  return days > 0 ? `${amount} ${unit} to go` : `${amount} ${unit} past`;
+}
+
 export function activityDueState(
   activity: Pick<CropActivity, "status" | "planned_date" | "planned_end_date">,
   today: string,

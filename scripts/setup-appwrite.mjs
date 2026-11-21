@@ -58,7 +58,7 @@ const schema = [
   },
   {
     id: "crop_seasons", name: "Crop seasons",
-    columns: [farmer, string("name", 160), string("crop", 100), string("variety", 120, false), string("plot", 200), string("planting_date", 10), string("batch_code", 50, false), string("status", 20), datetime("created_at")],
+    columns: [farmer, string("name", 160), string("crop", 100), string("variety", 120, false), string("plot", 200), string("planting_date", 10), string("end_date", 10, false), string("batch_code", 50, false), string("status", 20), datetime("created_at")],
     indexes: [index("farmer_id_key", ["farmer_id"]), index("batch_code_key", ["batch_code"]), index("planting_date_key", ["planting_date"])],
   },
   {

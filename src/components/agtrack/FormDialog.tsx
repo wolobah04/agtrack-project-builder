@@ -27,11 +27,11 @@ export function FormDialog({ open, onOpenChange, title, fields, initial, onSubmi
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4" noValidate>
+      <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto rounded-3xl p-0 sm:max-w-xl">
+        <DialogHeader className="border-b border-border px-6 py-5"><DialogTitle className="text-xl font-bold">{title}</DialogTitle></DialogHeader>
+        <form onSubmit={submit} noValidate><div className="grid gap-x-4 gap-y-5 px-6 py-6 sm:grid-cols-2">
           {fields.map((f) => (
-            <div key={f.name} className="space-y-1.5">
+            <div key={f.name} className={`space-y-2 ${f.type === "date" || f.name === "description" || f.name === "note" ? "sm:col-span-2" : ""}`}>
               <Label htmlFor={f.name}>{f.label}</Label>
               {f.type === "select" ? (
                 <Select value={v[f.name] ?? ""} onValueChange={(x) => setV({ ...v, [f.name]: x })}><SelectTrigger id={f.name} className="h-11"><SelectValue placeholder="Choose" /></SelectTrigger>
@@ -40,7 +40,7 @@ export function FormDialog({ open, onOpenChange, title, fields, initial, onSubmi
               {err[f.name] && <p className="text-xs text-destructive">{err[f.name]}</p>}
             </div>
           ))}
-          <Button type="submit" variant="hero" className="w-full" disabled={loading}>{loading && <Loader2 className="animate-spin" />}Save</Button>
+          </div><div className="flex justify-end gap-3 border-t border-border px-6 py-4"><Button type="button" variant="ghost" className="rounded-full" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" variant="hero" className="rounded-full px-6" disabled={loading}>{loading && <Loader2 className="animate-spin" />}Save</Button></div>
         </form>
       </DialogContent>
     </Dialog>

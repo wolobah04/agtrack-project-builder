@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/trace/$code")({
   ssr: false,
-  head: ({ params }) => ({ meta: [{ title: `Batch ${params.code} — AgTrack` }, { name: "description", content: `Traceability history for produce batch ${params.code}.` }, { property: "og:title", content: `Batch ${params.code} — AgTrack` }, { property: "og:description", content: "Verified farm-to-market history." }] }),
+  head: ({ params }) => ({ meta: [{ title: `Batch ${params.code} — AgTrack` }, { name: "description", content: `Traceability history for produce batch ${params.code}.` }, { property: "og:title", content: `Batch ${params.code} — AgTrack` }, { property: "og:description", content: "Verified farm-to-market history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Trace,
 });
 function Trace() {

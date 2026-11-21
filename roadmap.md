@@ -24,3 +24,8 @@
 - [x] Label the public example score and keep it separate from real farmer data.
 - [x] Use the shared real-record score in the browser-demo assistant and REST Ministry fallback.
 - [x] Re-run score, assistant, fallback and routing checks after the full-app sweep.
+
+# Public buyer QR links
+
+- [ ] Generate QR codes with the permanent public app address instead of the private preview address.
+- [ ] Publish AgTrack and verify a signed-out buyer can open batch history without a Lovable login.

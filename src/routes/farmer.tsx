@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { requireRole } from "@/lib/guard";
 import { useSession } from "@/hooks/use-session";
 import { useRecords } from "@/hooks/use-farm-data";
+import { publicBatchUrl } from "@/lib/public-links";
 
 export const Route = createFileRoute("/farmer")({
   ssr: false,
@@ -26,13 +27,13 @@ const nav = [
 function QrButton() {
   const { data } = useRecords("harvests");
   const latest = data?.[0];
-  const url = latest && typeof window !== "undefined" ? `${window.location.origin}/trace/${latest.batch_code}` : "";
+  const url = latest ? publicBatchUrl(latest.batch_code) : "";
   return (
     <Dialog>
       <DialogTrigger asChild><Button variant="outline" size="icon" aria-label="Show QR code"><QrCode /></Button></DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Latest batch QR</DialogTitle></DialogHeader>
-        {latest ? <div className="flex flex-col items-center gap-3"><div className="rounded-2xl bg-card p-4"><QRCodeSVG value={url} size={200} fgColor="currentColor" className="text-sidebar" /></div><p className="font-bold">{latest.batch_code}</p><p className="text-center text-sm text-muted-foreground">Buyers can scan this to see the batch history. Print it on your bag label.</p></div>
+        {latest ? <div className="flex flex-col items-center gap-3"><div className="rounded-2xl bg-card p-4"><QRCodeSVG value={url} size={200} fgColor="currentColor" className="text-sidebar" /></div><p className="font-bold">{latest.batch_code}</p><p className="text-center text-sm text-muted-foreground">Buyers can scan this to see the public batch history without signing in. Print it on your bag label.</p><a href={url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary underline">Open buyer history</a></div>
           : <p className="text-sm text-muted-foreground">Log a harvest first to get a QR code.</p>}
       </DialogContent>
     </Dialog>

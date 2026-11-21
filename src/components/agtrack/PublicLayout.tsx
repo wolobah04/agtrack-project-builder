@@ -100,6 +100,8 @@ export function PublicNav() {
 }
 
 export function PublicFooter() {
+  const session = useSession();
+  const account = session ? accountLinks[session.user.role] : null;
   return (
     <footer className="mt-20 bg-sidebar text-sidebar-foreground">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-3">
@@ -115,8 +117,13 @@ export function PublicFooter() {
         </div>
         <div className="space-y-2 text-sm">
           <h4 className="font-bold text-sidebar-primary">Links</h4>
-          <Link to="/login" className="block opacity-90 hover:opacity-100">Sign in</Link>
-          <Link to="/signup" className="block opacity-90 hover:opacity-100">Sign up</Link>
+          {session && account ? <>
+            <Link to={account.dashboard} className="block opacity-90 hover:opacity-100">Dashboard</Link>
+            <Link to={account.settings} className="block opacity-90 hover:opacity-100">Settings</Link>
+          </> : <>
+            <Link to="/login" className="block opacity-90 hover:opacity-100">Sign in</Link>
+            <Link to="/signup" className="block opacity-90 hover:opacity-100">Sign up</Link>
+          </>}
           <Link to="/ussd" className="block opacity-90 hover:opacity-100">USSD / SMS demo</Link>
           <a href="/#lookup" className="block opacity-90 hover:opacity-100">Check a batch</a>
         </div>

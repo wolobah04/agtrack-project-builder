@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, USE_MOCK } from "@/lib/api";
 import { homeFor, setSession } from "@/lib/auth";
+import { requireGuest } from "@/lib/guard";
 import { LIBERIA_PHONE, normalizePhone } from "@/lib/constants";
 
 export const Route = createFileRoute("/login")({
+  ssr: false,
+  beforeLoad: () => requireGuest(),
   head: () => ({ meta: [{ title: "Sign in — AgTrack" }, { name: "description", content: "Sign in to your AgTrack farm account with your phone number." }, { property: "og:title", content: "Sign in — AgTrack" }, { property: "og:description", content: "Sign in to your AgTrack farm account." }] }),
   component: Login,
 });
@@ -23,7 +26,7 @@ function Login() {
     if (!LIBERIA_PHONE.test(p)) return setErr("Enter a Liberian number, e.g. +231 77 000 0000");
     if (!pw) return setErr("Enter your password");
     setErr(""); setLoading(true);
-    try { const r = await api.auth.login(p, pw); setSession({ ...r, expires_at: Date.now() + 8 * 3600e3 }); toast.success(`Welcome, ${r.user.name}`); nav({ to: homeFor(r.user.role) }); }
+    try { const r = await api.auth.login(p, pw); setSession(r); toast.success(`Welcome, ${r.user.name}`); nav({ to: homeFor(r.user.role) }); }
     catch (x) { setErr((x as Error).message); } finally { setLoading(false); }
   };
   return (

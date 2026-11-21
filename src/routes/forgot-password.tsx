@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { requireGuest } from "@/lib/guard";
 
 export const Route = createFileRoute("/forgot-password")({
+  ssr: false,
+  beforeLoad: () => requireGuest(),
   head: () => ({ meta: [{ title: "Forgot password — AgTrack" }, { name: "description", content: "Reset your AgTrack password." }, { property: "og:title", content: "Forgot password — AgTrack" }, { property: "og:description", content: "Reset your AgTrack password." }] }),
   component: Forgot,
 });

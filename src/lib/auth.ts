@@ -1,12 +1,12 @@
 import type { Role, User } from "./types";
 const KEY = "agtrack-session";
-export interface Session { token: string; user: User; expires_at: number }
+export interface Session { token: string; user: User }
 
 export function getSession(): Session | null {
   if (typeof window === "undefined") return null;
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? "null") as Session | null;
-    if (!s || s.expires_at < Date.now()) { localStorage.removeItem(KEY); return null; }
+    if (!s || typeof s.token !== "string" || !s.user) { localStorage.removeItem(KEY); return null; }
     return s;
   } catch { return null; }
 }

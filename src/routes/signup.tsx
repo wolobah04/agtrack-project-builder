@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sprout, ClipboardList, ArrowRight } from "lucide-react";
 import { AuthCard } from "@/components/agtrack/AuthCard";
+import { requireGuest } from "@/lib/guard";
 
 export const Route = createFileRoute("/signup")({
+  ssr: false,
+  beforeLoad: () => requireGuest(),
   head: () => ({ meta: [{ title: "Sign up — AgTrack" }, { name: "description", content: "Create a free AgTrack account as a farmer or field agent." }, { property: "og:title", content: "Sign up — AgTrack" }, { property: "og:description", content: "Create a free AgTrack account." }] }),
   component: () => (
     <AuthCard title="Sign up" subtitle="Who are you?">

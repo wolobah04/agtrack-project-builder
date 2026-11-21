@@ -1,6 +1,10 @@
 import { redirect } from "@tanstack/react-router";
 import { getSession, homeFor } from "./auth";
 import type { Role } from "./types";
+export function requireGuest() {
+  const s = getSession();
+  if (s) throw redirect({ to: homeFor(s.user.role) });
+}
 export function requireRole(role: Role) {
   const s = getSession();
   if (!s) throw redirect({ to: "/login" });

@@ -28,3 +28,9 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Architecture
+- All farm data goes through `src/lib/api.ts`; it calls the REST API when `VITE_API_BASE_URL` is set and uses the localStorage mock in `src/lib/mock-db.ts` otherwise, so the UI works without a backend.
+- Sessions are kept in localStorage (`src/lib/auth.ts`); role areas `/farmer`, `/agent`, `/admin` are `ssr: false` layouts guarded by `requireRole` because the server cannot read the session.
+- Quality score logic lives only in `src/lib/score.ts` (tested in `score.test.ts`) so the UI formula and the calculation stay identical.
+- USSD is a simulator plus the placeholder in `src/lib/ussd.ts` until a telecom gateway is connected.

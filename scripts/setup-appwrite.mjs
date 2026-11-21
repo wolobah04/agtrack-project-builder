@@ -128,7 +128,12 @@ try {
 for (const table of schema) {
   // No client table permissions: every data request is authorized by a server function.
   await allowConflict(`table ${table.id}`, () => tables.createTable({ databaseId, tableId: table.id, name: table.name, permissions: [], rowSecurity: false }));
+  const existingTable = await tables.getTable({ databaseId, tableId: table.id });
   for (const column of table.columns) {
+    if (existingTable.columns.some((existing) => existing.key === column.key)) {
+      console.log(`Exists  column ${table.id}.${column.key}`);
+      continue;
+    }
     await allowConflict(`column ${table.id}.${column.key}`, async () => {
       const args = { databaseId, tableId: table.id, key: column.key, required: column.required };
       if (column.type === "string") return tables.createStringColumn({ ...args, size: column.size });

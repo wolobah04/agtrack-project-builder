@@ -1,6 +1,6 @@
 # AgTrack Appwrite setup
 
-AgTrack uses Appwrite Cloud for accounts, role-aware data access, farm records, reports, public traceability, chat history, notifications, and audit logs. Without Appwrite configuration, the existing sample-data mode still works.
+AgTrack uses Appwrite Cloud for accounts, role-aware data access, farm records, reports, public traceability, chat history, notifications, and audit logs. Set `VITE_USE_MOCK=true` to use the existing browser-only sample-data mode instead.
 
 ## 1. Create the project
 
@@ -52,7 +52,7 @@ All application tables deny direct browser writes. TanStack server functions val
 
 AgTrack keeps its phone-number sign-in interface. Internally, each phone maps to a private synthetic Appwrite email such as `231770000003@phone.agtrack.app`; users never need to enter that email.
 
-The first admin uses the phone and password supplied to the setup script. Farmers and agents can then register through the normal sign-up screens. Agents can also register farmers assigned to them.
+The first admin uses the phone and password supplied to the setup script. Re-running the script with a changed `APPWRITE_ADMIN_PASSWORD` updates that admin's password. Farmers and agents can then register through the normal sign-up screens. Agents can also register farmers assigned to them.
 
 Phone-only accounts cannot receive Appwrite email recovery links. A field agent or Ministry admin must help with those password resets.
 

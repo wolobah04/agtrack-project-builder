@@ -7,8 +7,8 @@ import { clearSession, getSession } from "./auth";
 import { batchCode, db, save, uid, type MockDB } from "./mock-db";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
-export const USE_MOCK = !BASE || import.meta.env.VITE_USE_MOCK === "true";
+const BASE = (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "");
+export const USE_MOCK = !BASE || import.meta.env["VITE_USE_MOCK"] === "true";
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 
 export class ApiError extends Error { constructor(message: string, public status = 400) { super(message); } }
@@ -92,7 +92,7 @@ export const api = {
   /** Public buyer lookup: returns only non-private trace info. */
   async batchHistory(code: string): Promise<{ batch_code: string; crop: string; county: string; grade: string | null; stages: Omit<Trace, "farmer_id">[] } | null> {
     const c = code.trim().toUpperCase();
-    if (!USE_MOCK) return http(`/traceability/batches/${encodeURIComponent(c)}`).catch(() => null);
+    if (!USE_MOCK) return http<any>(`/traceability/batches/${encodeURIComponent(c)}`).catch(() => null);
     await wait(400); const D = db();
     const h = D.harvests.find((x) => x.batch_code.toUpperCase() === c); if (!h) return null;
     const farmer = D.users.find((u) => u.id === h.farmer_id);
@@ -124,11 +124,11 @@ export const api = {
       db().users.push(u); audit(d.agent_id ? `Registered farmer ${d.name}` : `New ${d.role} sign-up: ${d.name}`); save();
       const { password: _p, ...user } = u; return user;
     },
-    async recover(contact: string) { if (!USE_MOCK) return http(`/password-recovery/${encodeURIComponent(contact)}`, { method: "POST" }); await wait(600); },
+    async recover(contact: string) { if (!USE_MOCK) return http(`/password-recovery/${encodeURIComponent(contact)}`, { method: "POST" }); await wait(600); return undefined; },
     async changePassword(current: string, next: string) {
       if (!USE_MOCK) return http("/users/me/password", { method: "PATCH", body: JSON.stringify({ current_password: current, new_password: next }) });
       await wait(); const u = db().users.find((x) => x.id === getSession()?.user.id);
-      if (!u || u.password !== current) throw new ApiError("Current password is wrong"); u.password = next; save();
+      if (!u || u.password !== current) throw new ApiError("Current password is wrong"); u.password = next; save(); return undefined;
     },
     async updateMe(data: Partial<User>): Promise<User> {
       if (!USE_MOCK) return http<User>("/users/me", { method: "PATCH", body: JSON.stringify(data) });
@@ -148,7 +148,7 @@ export const api = {
     },
     async remove(id: string) {
       if (!USE_MOCK) return http(`/users/${id}`, { method: "DELETE" });
-      await wait(); const D = db(); const u = D.users.find((x) => x.id === id); D.users = D.users.filter((x) => x.id !== id); audit(`Deleted user ${u?.name}`); save();
+      await wait(); const D = db(); const u = D.users.find((x) => x.id === id); D.users = D.users.filter((x) => x.id !== id); audit(`Deleted user ${u?.name}`); save(); return undefined;
     },
     async createAdmin(d: { name: string; phone: string; password: string }) {
       if (!USE_MOCK) return http<User>("/users/", { method: "POST", body: JSON.stringify({ ...d, role: "admin" }) });

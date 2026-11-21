@@ -10,33 +10,352 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgentRouteImport } from './routes/agent'
+import { Route as FarmerRouteImport } from './routes/farmer'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as UssdRouteImport } from './routes/ussd'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminLogRouteImport } from './routes/admin.log'
+import { Route as AdminManagementRouteImport } from './routes/admin.management'
+import { Route as AdminReportRouteImport } from './routes/admin.report'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AgentIndexRouteImport } from './routes/agent.index'
+import { Route as AgentRecordRouteImport } from './routes/agent.record'
+import { Route as AgentRegisterRouteImport } from './routes/agent.register'
+import { Route as AgentSettingsRouteImport } from './routes/agent.settings'
+import { Route as FarmerIndexRouteImport } from './routes/farmer.index'
+import { Route as FarmerChatRouteImport } from './routes/farmer.chat'
+import { Route as FarmerInventoryRouteImport } from './routes/farmer.inventory'
+import { Route as FarmerLossesRouteImport } from './routes/farmer.losses'
+import { Route as FarmerReportsRouteImport } from './routes/farmer.reports'
+import { Route as FarmerScoreRouteImport } from './routes/farmer.score'
+import { Route as FarmerSettingsRouteImport } from './routes/farmer.settings'
+import { Route as FarmerWeatherRouteImport } from './routes/farmer.weather'
+import { Route as RegisterRoleRouteImport } from './routes/register.$role'
+import { Route as TraceCodeRouteImport } from './routes/trace.$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentRoute = AgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FarmerRoute = FarmerRouteImport.update({
+  id: '/farmer',
+  path: '/farmer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UssdRoute = UssdRouteImport.update({
+  id: '/ussd',
+  path: '/ussd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLogRoute = AdminLogRouteImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminManagementRoute = AdminManagementRouteImport.update({
+  id: '/management',
+  path: '/management',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportRoute = AdminReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AgentIndexRoute = AgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentRecordRoute = AgentRecordRouteImport.update({
+  id: '/record',
+  path: '/record',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentRegisterRoute = AgentRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AgentRoute,
+} as any)
+const AgentSettingsRoute = AgentSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AgentRoute,
+} as any)
+const FarmerIndexRoute = FarmerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerChatRoute = FarmerChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerInventoryRoute = FarmerInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerLossesRoute = FarmerLossesRouteImport.update({
+  id: '/losses',
+  path: '/losses',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerReportsRoute = FarmerReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerScoreRoute = FarmerScoreRouteImport.update({
+  id: '/score',
+  path: '/score',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerSettingsRoute = FarmerSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerWeatherRoute = FarmerWeatherRouteImport.update({
+  id: '/weather',
+  path: '/weather',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const RegisterRoleRoute = RegisterRoleRouteImport.update({
+  id: '/register/$role',
+  path: '/register/$role',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraceCodeRoute = TraceCodeRouteImport.update({
+  id: '/trace/$code',
+  path: '/trace/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
+  '/farmer': typeof FarmerRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/ussd': typeof UssdRoute
+  '/admin/log': typeof AdminLogRoute
+  '/admin/management': typeof AdminManagementRoute
+  '/admin/report': typeof AdminReportRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/agent/record': typeof AgentRecordRoute
+  '/agent/register': typeof AgentRegisterRoute
+  '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/chat': typeof FarmerChatRoute
+  '/farmer/inventory': typeof FarmerInventoryRoute
+  '/farmer/losses': typeof FarmerLossesRoute
+  '/farmer/reports': typeof FarmerReportsRoute
+  '/farmer/score': typeof FarmerScoreRoute
+  '/farmer/settings': typeof FarmerSettingsRoute
+  '/farmer/weather': typeof FarmerWeatherRoute
+  '/register/$role': typeof RegisterRoleRoute
+  '/trace/$code': typeof TraceCodeRoute
+  '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
+  '/farmer/': typeof FarmerIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/ussd': typeof UssdRoute
+  '/admin/log': typeof AdminLogRoute
+  '/admin/management': typeof AdminManagementRoute
+  '/admin/report': typeof AdminReportRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/agent/record': typeof AgentRecordRoute
+  '/agent/register': typeof AgentRegisterRoute
+  '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/chat': typeof FarmerChatRoute
+  '/farmer/inventory': typeof FarmerInventoryRoute
+  '/farmer/losses': typeof FarmerLossesRoute
+  '/farmer/reports': typeof FarmerReportsRoute
+  '/farmer/score': typeof FarmerScoreRoute
+  '/farmer/settings': typeof FarmerSettingsRoute
+  '/farmer/weather': typeof FarmerWeatherRoute
+  '/register/$role': typeof RegisterRoleRoute
+  '/trace/$code': typeof TraceCodeRoute
+  '/admin': typeof AdminIndexRoute
+  '/agent': typeof AgentIndexRoute
+  '/farmer': typeof FarmerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/agent': typeof AgentRouteWithChildren
+  '/farmer': typeof FarmerRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/ussd': typeof UssdRoute
+  '/admin/log': typeof AdminLogRoute
+  '/admin/management': typeof AdminManagementRoute
+  '/admin/report': typeof AdminReportRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/agent/record': typeof AgentRecordRoute
+  '/agent/register': typeof AgentRegisterRoute
+  '/agent/settings': typeof AgentSettingsRoute
+  '/farmer/chat': typeof FarmerChatRoute
+  '/farmer/inventory': typeof FarmerInventoryRoute
+  '/farmer/losses': typeof FarmerLossesRoute
+  '/farmer/reports': typeof FarmerReportsRoute
+  '/farmer/score': typeof FarmerScoreRoute
+  '/farmer/settings': typeof FarmerSettingsRoute
+  '/farmer/weather': typeof FarmerWeatherRoute
+  '/register/$role': typeof RegisterRoleRoute
+  '/trace/$code': typeof TraceCodeRoute
+  '/admin/': typeof AdminIndexRoute
+  '/agent/': typeof AgentIndexRoute
+  '/farmer/': typeof FarmerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/agent'
+    | '/farmer'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/ussd'
+    | '/admin/log'
+    | '/admin/management'
+    | '/admin/report'
+    | '/admin/settings'
+    | '/agent/record'
+    | '/agent/register'
+    | '/agent/settings'
+    | '/farmer/chat'
+    | '/farmer/inventory'
+    | '/farmer/losses'
+    | '/farmer/reports'
+    | '/farmer/score'
+    | '/farmer/settings'
+    | '/farmer/weather'
+    | '/register/$role'
+    | '/trace/$code'
+    | '/admin/'
+    | '/agent/'
+    | '/farmer/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/ussd'
+    | '/admin/log'
+    | '/admin/management'
+    | '/admin/report'
+    | '/admin/settings'
+    | '/agent/record'
+    | '/agent/register'
+    | '/agent/settings'
+    | '/farmer/chat'
+    | '/farmer/inventory'
+    | '/farmer/losses'
+    | '/farmer/reports'
+    | '/farmer/score'
+    | '/farmer/settings'
+    | '/farmer/weather'
+    | '/register/$role'
+    | '/trace/$code'
+    | '/admin'
+    | '/agent'
+    | '/farmer'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/agent'
+    | '/farmer'
+    | '/forgot-password'
+    | '/login'
+    | '/signup'
+    | '/ussd'
+    | '/admin/log'
+    | '/admin/management'
+    | '/admin/report'
+    | '/admin/settings'
+    | '/agent/record'
+    | '/agent/register'
+    | '/agent/settings'
+    | '/farmer/chat'
+    | '/farmer/inventory'
+    | '/farmer/losses'
+    | '/farmer/reports'
+    | '/farmer/score'
+    | '/farmer/settings'
+    | '/farmer/weather'
+    | '/register/$role'
+    | '/trace/$code'
+    | '/admin/'
+    | '/agent/'
+    | '/farmer/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  AgentRoute: typeof AgentRouteWithChildren
+  FarmerRoute: typeof FarmerRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
+  UssdRoute: typeof UssdRoute
+  RegisterRoleRoute: typeof RegisterRoleRoute
+  TraceCodeRoute: typeof TraceCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +367,261 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent': {
+      id: '/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/farmer': {
+      id: '/farmer'
+      path: '/farmer'
+      fullPath: '/farmer'
+      preLoaderRoute: typeof FarmerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ussd': {
+      id: '/ussd'
+      path: '/ussd'
+      fullPath: '/ussd'
+      preLoaderRoute: typeof UssdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/log': {
+      id: '/admin/log'
+      path: '/log'
+      fullPath: '/admin/log'
+      preLoaderRoute: typeof AdminLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/management': {
+      id: '/admin/management'
+      path: '/management'
+      fullPath: '/admin/management'
+      preLoaderRoute: typeof AdminManagementRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/report': {
+      id: '/admin/report'
+      path: '/report'
+      fullPath: '/admin/report'
+      preLoaderRoute: typeof AdminReportRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/agent/': {
+      id: '/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AgentIndexRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/record': {
+      id: '/agent/record'
+      path: '/record'
+      fullPath: '/agent/record'
+      preLoaderRoute: typeof AgentRecordRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/register': {
+      id: '/agent/register'
+      path: '/register'
+      fullPath: '/agent/register'
+      preLoaderRoute: typeof AgentRegisterRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/agent/settings': {
+      id: '/agent/settings'
+      path: '/settings'
+      fullPath: '/agent/settings'
+      preLoaderRoute: typeof AgentSettingsRouteImport
+      parentRoute: typeof AgentRoute
+    }
+    '/farmer/': {
+      id: '/farmer/'
+      path: '/'
+      fullPath: '/farmer/'
+      preLoaderRoute: typeof FarmerIndexRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/chat': {
+      id: '/farmer/chat'
+      path: '/chat'
+      fullPath: '/farmer/chat'
+      preLoaderRoute: typeof FarmerChatRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/inventory': {
+      id: '/farmer/inventory'
+      path: '/inventory'
+      fullPath: '/farmer/inventory'
+      preLoaderRoute: typeof FarmerInventoryRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/losses': {
+      id: '/farmer/losses'
+      path: '/losses'
+      fullPath: '/farmer/losses'
+      preLoaderRoute: typeof FarmerLossesRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/reports': {
+      id: '/farmer/reports'
+      path: '/reports'
+      fullPath: '/farmer/reports'
+      preLoaderRoute: typeof FarmerReportsRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/score': {
+      id: '/farmer/score'
+      path: '/score'
+      fullPath: '/farmer/score'
+      preLoaderRoute: typeof FarmerScoreRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/settings': {
+      id: '/farmer/settings'
+      path: '/settings'
+      fullPath: '/farmer/settings'
+      preLoaderRoute: typeof FarmerSettingsRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/weather': {
+      id: '/farmer/weather'
+      path: '/weather'
+      fullPath: '/farmer/weather'
+      preLoaderRoute: typeof FarmerWeatherRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/register/$role': {
+      id: '/register/$role'
+      path: '/register/$role'
+      fullPath: '/register/$role'
+      preLoaderRoute: typeof RegisterRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trace/$code': {
+      id: '/trace/$code'
+      path: '/trace/$code'
+      fullPath: '/trace/$code'
+      preLoaderRoute: typeof TraceCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminLogRoute: typeof AdminLogRoute
+  AdminManagementRoute: typeof AdminManagementRoute
+  AdminReportRoute: typeof AdminReportRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLogRoute: AdminLogRoute,
+  AdminManagementRoute: AdminManagementRoute,
+  AdminReportRoute: AdminReportRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AgentRouteChildren {
+  AgentRecordRoute: typeof AgentRecordRoute
+  AgentRegisterRoute: typeof AgentRegisterRoute
+  AgentSettingsRoute: typeof AgentSettingsRoute
+  AgentIndexRoute: typeof AgentIndexRoute
+}
+
+const AgentRouteChildren: AgentRouteChildren = {
+  AgentRecordRoute: AgentRecordRoute,
+  AgentRegisterRoute: AgentRegisterRoute,
+  AgentSettingsRoute: AgentSettingsRoute,
+  AgentIndexRoute: AgentIndexRoute,
+}
+
+const AgentRouteWithChildren = AgentRoute._addFileChildren(AgentRouteChildren)
+
+interface FarmerRouteChildren {
+  FarmerChatRoute: typeof FarmerChatRoute
+  FarmerInventoryRoute: typeof FarmerInventoryRoute
+  FarmerLossesRoute: typeof FarmerLossesRoute
+  FarmerReportsRoute: typeof FarmerReportsRoute
+  FarmerScoreRoute: typeof FarmerScoreRoute
+  FarmerSettingsRoute: typeof FarmerSettingsRoute
+  FarmerWeatherRoute: typeof FarmerWeatherRoute
+  FarmerIndexRoute: typeof FarmerIndexRoute
+}
+
+const FarmerRouteChildren: FarmerRouteChildren = {
+  FarmerChatRoute: FarmerChatRoute,
+  FarmerInventoryRoute: FarmerInventoryRoute,
+  FarmerLossesRoute: FarmerLossesRoute,
+  FarmerReportsRoute: FarmerReportsRoute,
+  FarmerScoreRoute: FarmerScoreRoute,
+  FarmerSettingsRoute: FarmerSettingsRoute,
+  FarmerWeatherRoute: FarmerWeatherRoute,
+  FarmerIndexRoute: FarmerIndexRoute,
+}
+
+const FarmerRouteWithChildren =
+  FarmerRoute._addFileChildren(FarmerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  AgentRoute: AgentRouteWithChildren,
+  FarmerRoute: FarmerRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
+  UssdRoute: UssdRoute,
+  RegisterRoleRoute: RegisterRoleRoute,
+  TraceCodeRoute: TraceCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

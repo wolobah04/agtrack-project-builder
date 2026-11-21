@@ -1,0 +1,11 @@
+import type { Field } from "@/components/agtrack/FormDialog";
+import { EXPENSE_CATEGORIES, LOSS_CAUSES, todayISO } from "./constants";
+export const harvestFields: Field[] = [{ name: "crop", label: "Crop" }, { name: "quantity_kg", label: "Quantity (kg)", type: "number" }, { name: "grade", label: "Quality grade", type: "select", options: ["A", "B", "C", "Not graded"] }, { name: "location", label: "Farm location" }, { name: "date", label: "Date", type: "date" }];
+export const expenseFields: Field[] = [{ name: "category", label: "Category", type: "select", options: EXPENSE_CATEGORIES }, { name: "amount", label: "Amount (LRD)", type: "number" }, { name: "description", label: "Note", required: false }, { name: "date", label: "Date", type: "date" }];
+export const lossFields: Field[] = [{ name: "crop", label: "Crop" }, { name: "quantity_kg", label: "Quantity lost (kg)", type: "number" }, { name: "cause", label: "Cause", type: "select", options: LOSS_CAUSES }, { name: "date", label: "Date", type: "date" }];
+export const stockFields: Field[] = [{ name: "item", label: "Item" }, { name: "type", label: "Stock in or out", type: "select", options: ["in", "out"] }, { name: "quantity", label: "Quantity", type: "number" }, { name: "unit", label: "Unit (kg, bags...)" }, { name: "note", label: "Note", required: false }, { name: "date", label: "Date", type: "date" }];
+export const d0 = () => ({ date: todayISO() });
+export const toHarvest = (v: Record<string, string>) => ({ crop: v["crop"]!.trim(), quantity_kg: +v["quantity_kg"]!, grade: (["A", "B", "C"].includes(v["grade"]!) ? v["grade"] : null) as "A" | null, location: v["location"]!.trim(), date: v["date"]! });
+export const toExpense = (v: Record<string, string>) => ({ category: v["category"]!, amount: +v["amount"]!, description: (v["description"] ?? "").trim(), date: v["date"]! });
+export const toLoss = (v: Record<string, string>) => ({ crop: v["crop"]!.trim(), quantity_kg: +v["quantity_kg"]!, cause: v["cause"]!, date: v["date"]! });
+export const toStock = (v: Record<string, string>) => ({ item: v["item"]!.trim(), type: v["type"] as "in" | "out", quantity: +v["quantity"]!, unit: v["unit"]!.trim(), note: (v["note"] ?? "").trim(), date: v["date"]! });

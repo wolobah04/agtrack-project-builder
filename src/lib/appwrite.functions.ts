@@ -3,7 +3,9 @@ import { Query } from "appwrite";
 import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
-import type { Role, User } from "./types";
+import { buildGroqMessages, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
+import type { Expense, Harvest, InventoryTx, LossRecord, Role, User } from "./types";
+import { getForecast } from "./weather";
 
 const PROJECT_FALLBACK = "6b011308003b57f341b6";
 type Config = { endpoint: string; projectId: string; apiKey: string; databaseId: string };
@@ -340,6 +342,81 @@ export const getAppwriteBatchHistory = createServerFn({ method: "POST" })
       batch_code: String(harvest["batch_code"]), crop: String(harvest["crop"]), county: String(farmer["county"] ?? ""), grade: harvest["grade"] ? String(harvest["grade"]) : null,
       stages: traces.map((trace) => ({ id: trace.id, batch_code: String(trace["batch_code"]), stage: trace["stage"], location: String(trace["location"]), actor: trace["actor"] === farmer["name"] ? "Registered farmer" : String(trace["actor"]), date: String(trace["date"]) })),
     };
+  });
+
+const assistantInput = z.object({
+  jwt: z.string().min(1),
+  message: z.string().trim().min(1).max(500),
+  history: z.array(z.object({ role: z.enum(["user", "bot"]), text: z.string().trim().min(1).max(4000) })).max(12).default([]),
+});
+
+type GroqResponse = { choices?: { message?: { content?: string } }[]; error?: { message?: string; code?: string } };
+
+export const askFarmAssistant = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => assistantInput.parse(input))
+  .handler(async ({ data }) => {
+    const config = serverConfig();
+    const actor = await getActor(config, data.jwt);
+    if (actor.role !== "farmer") throw new HttpError("The farm assistant is available to farmer accounts", 403);
+    const apiKey = process.env["GROQ_API_KEY"];
+    if (!apiKey) throw new Error("The AI assistant is not connected yet. Please contact the administrator.");
+
+    const weatherCounty = questionCounty(data.message, actor.county);
+    const weatherRequest = getForecast(weatherCounty).catch((error) => {
+      console.error("Open-Meteo request failed for the farm assistant", error instanceof Error ? error.message : "unknown error");
+      return null;
+    });
+    const recordsRequest = Promise.all([
+      listRows(config, "harvests", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
+      listRows(config, "expenses", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
+      listRows(config, "losses", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
+      listRows(config, "inventory", [Query.equal("farmer_id", actor.id), Query.orderDesc("date")]),
+    ]);
+    const [forecast, [harvests, expenses, losses, inventory]] = await Promise.all([weatherRequest, recordsRequest]);
+    const systemPrompt = buildSystemPrompt({
+      farmer: actor,
+      weatherCounty,
+      forecast,
+      fetchedAt: new Date().toISOString(),
+      harvests: harvests as unknown as Harvest[],
+      expenses: expenses as unknown as Expense[],
+      losses: losses as unknown as LossRecord[],
+      inventory: inventory as unknown as InventoryTx[],
+    });
+
+    let response: Response;
+    try {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: buildGroqMessages(systemPrompt, data.history, data.message),
+          temperature: 1,
+          max_completion_tokens: 2048,
+          top_p: 1,
+          reasoning_effort: "medium",
+          reasoning_format: "parsed",
+          stream: false,
+          stop: null,
+        }),
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch (error) {
+      console.error("Groq request could not be completed", error instanceof Error ? error.message : "unknown error");
+      throw new Error("The AI assistant could not be reached. Please try again.");
+    }
+
+    const result = await response.json().catch(() => ({})) as GroqResponse;
+    if (!response.ok) {
+      console.error("Groq API returned an error", response.status, result.error?.code ?? "unknown");
+      if (response.status === 401 || response.status === 403) throw new Error("Groq rejected the configured API key. Please contact the administrator.");
+      if (response.status === 429) throw new Error("The AI assistant is busy right now. Please wait a moment and try again.");
+      throw new Error("The AI assistant could not answer right now. Please try again.");
+    }
+    const reply = result.choices?.[0]?.message?.content?.trim();
+    if (!reply) throw new Error("The AI assistant returned an empty answer. Please try again.");
+    return { reply, weatherCounty, weatherLive: forecast !== null };
   });
 
 const chatInput = z.object({ jwt: z.string(), action: z.enum(["list", "add", "clear"]), role: z.enum(["user", "bot"]).optional(), text: z.string().trim().min(1).max(4000).optional() });

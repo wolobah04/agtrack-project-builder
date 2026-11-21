@@ -11,6 +11,10 @@ All data access goes through `src/lib/api.ts`. Appwrite is used automatically; t
 - [Complete Appwrite setup guide](docs/appwrite-setup.md)
 - [Idempotent schema setup script](scripts/setup-appwrite.mjs)
 
+## AI farm assistant
+
+The farmer chat uses Groq's `openai/gpt-oss-120b` model through an authenticated server function. Each request includes live Open-Meteo weather and only the signed-in farmer's own harvest, expense, loss and inventory records. Store `GROQ_API_KEY` in the project's secure Secrets settings; it is never sent to the browser. The browser-only sample-data mode keeps its original rule-based fallback.
+
 ```sh
 bun install
 bun run appwrite:setup

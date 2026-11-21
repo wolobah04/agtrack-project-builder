@@ -18,6 +18,7 @@ Copy `.env.example` values into your local environment or hosting settings:
 - `VITE_APPWRITE_ENDPOINT` and `VITE_APPWRITE_PROJECT_ID`: public browser configuration.
 - `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`, `APPWRITE_API_KEY`: server-only setup and API access.
 - `APPWRITE_DATABASE_ID`: defaults to `agtrack`.
+- `GROQ_API_KEY`: server-only key for the AI farm assistant. Create it in the [Groq console](https://console.groq.com/keys) and store it in the project's secure Secrets settings; never expose it to the browser.
 
 For the first Ministry account, optionally set `APPWRITE_ADMIN_NAME`, `APPWRITE_ADMIN_PHONE`, and `APPWRITE_ADMIN_PASSWORD`. Passwords need at least 8 characters. Do not commit real passwords.
 

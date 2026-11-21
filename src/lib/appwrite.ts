@@ -4,6 +4,7 @@ import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, R
 import {
   appwriteChatHistory,
   appwriteHealthCheck,
+  askFarmAssistant,
   appwriteNationalData,
   getAppwriteAuditLog,
   getAppwriteBatchHistory,
@@ -130,6 +131,12 @@ export const appwriteApi = {
   },
   async national() {
     return appwriteNationalData({ data: { jwt: await jwt() } });
+  },
+};
+
+export const appwriteAssistant = {
+  async ask(message: string, history: { role: "user" | "bot"; text: string }[]) {
+    return askFarmAssistant({ data: { jwt: await jwt(), message, history } });
   },
 };
 

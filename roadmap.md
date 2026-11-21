@@ -10,7 +10,7 @@
 
 # Groq farm assistant
 
-- [ ] Build the authenticated Groq server function with live Open-Meteo and farmer-record context.
-- [ ] Replace static Appwrite chat replies with model responses and preserve conversation history.
-- [ ] Add the Groq API key through the secure secret form (waiting for user confirmation).
-- [ ] Verify a signed-in farmer receives an AI answer grounded in live weather and farm records.
+- [x] Build the authenticated Groq server function with live Open-Meteo and farmer-record context.
+- [x] Replace static Appwrite chat replies with model responses and preserve conversation history.
+- [x] Add the Groq API key through the secure secret form.
+- [x] Verify a signed-in farmer receives an AI answer grounded in live weather and farm records.

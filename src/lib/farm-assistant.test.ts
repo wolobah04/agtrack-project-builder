@@ -16,6 +16,7 @@ describe("AI farm assistant context", () => {
   it("grounds prompts in live rain data and calculated farm stock", () => {
     const prompt = buildSystemPrompt({
       farmer: { name: "Mary", county: "Nimba", farm_type: "Rice" },
+      weatherCounty: "Nimba",
       forecast,
       fetchedAt: "2026-11-21T04:50:00.000Z",
       harvests: [],

@@ -9,6 +9,7 @@ export type GroqMessage = { role: "system" | "user" | "assistant"; content: stri
 
 type AssistantContext = {
   farmer: Pick<User, "name" | "county" | "farm_type">;
+  weatherCounty: string;
   forecast: Forecast | null;
   fetchedAt: string;
   harvests: Harvest[];
@@ -43,7 +44,7 @@ export function buildSystemPrompt(context: AssistantContext): string {
     weather: context.forecast
       ? {
           source: "Live Open-Meteo forecast",
-          county: questionCounty("", context.farmer.county),
+          county: context.weatherCounty,
           fetched_at: context.fetchedAt,
           timezone: "Africa/Monrovia",
           today_is_the_first_daily_entry: true,

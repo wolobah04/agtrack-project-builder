@@ -19,7 +19,7 @@ async function request<T>(config: Config, path: string, options: { method?: stri
   for (const query of options.queries ?? []) url.searchParams.append("queries[]", query);
   const headers = new Headers({ "X-Appwrite-Project": config.projectId });
   if (options.admin !== false) headers.set("X-Appwrite-Key", config.apiKey);
-  if (options.jwt) headers.set("X-Appwrite-JWT", options.jwt);
+  if (options.jwt) headers.set("X-Appwrite-Session", options.jwt);
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
   const response = await fetch(url, { method: options.method ?? "GET", headers, ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}) });
   const text = await response.text();
@@ -139,6 +139,7 @@ async function createAccount(config: Config, input: { phone: string; name: strin
       active: true, ...(input.agent_id ? { agent_id: input.agent_id } : {}), email: phoneEmail(input.phone),
     });
     await createRow(config, "user_roles", auth.$id, { user_id: auth.$id, role: input.role });
+    await request(config, `/users/${auth.$id}/prefs`, { method: "PATCH", body: { prefs: { name: input.name, phone: input.phone, county: input.county, farm_type: input.farm_type, role: input.role, ...(input.agent_id ? { agent_id: input.agent_id } : {}) } } }).catch(() => undefined);
     await addMembership(config, input.role, auth.$id);
     await audit(config, input.agent_id ? "Field agent" : "System", `${input.agent_id ? "Registered farmer" : `New ${input.role} sign-up`}: ${input.name}`);
     return toUser(profile, { id: auth.$id, role: input.role });
@@ -367,3 +368,34 @@ export const appwriteHealthCheck = createServerFn({ method: "GET" }).handler(asy
     return response.ok;
   } catch { return false; }
 });
+
+const serverConfig = (): Config => requireConfig({ endpoint: process.env["APPWRITE_ENDPOINT"] ?? "https://cloud.appwrite.io/v1", projectId: process.env["APPWRITE_PROJECT_ID"] ?? PROJECT_FALLBACK, apiKey: process.env["APPWRITE_API_KEY"] ?? "", databaseId: process.env["APPWRITE_DATABASE_ID"] ?? "agtrack" });
+
+// Sign-in runs on the server so the browser never calls Appwrite directly (no CORS / web-platform setup needed).
+export const loginAppwrite = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ phone: z.string().min(4).max(20), password: z.string().min(1).max(72) }).parse(input))
+  .handler(async ({ data }): Promise<{ token: string; user: User }> => {
+    const config = serverConfig();
+    let session: { secret?: string };
+    try { session = await request<{ secret?: string }>(config, "/account/sessions/email", { method: "POST", body: { email: phoneEmail(data.phone), password: data.password } }); }
+    catch (error) {
+      if (error instanceof HttpError && (error.status === 401 || error.status === 400)) throw new Error("Wrong phone number or password.");
+      throw error;
+    }
+    if (!session.secret) throw new Error("Sign-in failed. Please try again.");
+    const user = await getActor(config, session.secret);
+    return { token: session.secret, user };
+  });
+
+export const accountAppwrite = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ jwt: z.string().min(1), action: z.enum(["logout", "password"]), current: z.string().max(72).optional(), next: z.string().min(8).max(72).optional() }).parse(input))
+  .handler(async ({ data }) => {
+    const config = serverConfig();
+    if (data.action === "logout") {
+      await request(config, "/account/sessions/current", { method: "DELETE", jwt: data.jwt, admin: false }).catch(() => undefined);
+      return { ok: true };
+    }
+    try { await request(config, "/account/password", { method: "PATCH", jwt: data.jwt, admin: false, body: { password: data.next, oldPassword: data.current } }); }
+    catch (error) { if (error instanceof HttpError && error.status === 401) throw new Error("Your current password is wrong."); throw error; }
+    return { ok: true };
+  });

@@ -1,4 +1,3 @@
-import { Account, AppwriteException, Client } from "appwrite";
 import { clearSession, getSession } from "./auth";
 import { batchCode } from "./mock-db";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
@@ -8,38 +7,24 @@ import {
   appwriteNationalData,
   getAppwriteAuditLog,
   getAppwriteBatchHistory,
-  getAppwriteMe,
+  accountAppwrite,
+  loginAppwrite,
   manageAppwriteUsers,
   mutateAppwriteRecord,
   registerAppwriteUser,
 } from "./appwrite.functions";
 
-const ENDPOINT = (import.meta.env["VITE_APPWRITE_ENDPOINT"] as string | undefined) ?? "https://cloud.appwrite.io/v1";
 const PROJECT_ID = (import.meta.env["VITE_APPWRITE_PROJECT_ID"] as string | undefined) ?? "6b011308003b57f341b6";
 export const USE_APPWRITE = Boolean(PROJECT_ID) && import.meta.env["VITE_USE_MOCK"] !== "true";
 
-let account: Account | undefined;
-function getAccount(): Account {
-  if (!USE_APPWRITE) throw new Error("Appwrite is not configured. Add VITE_APPWRITE_PROJECT_ID.");
-  if (!account) account = new Account(new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID));
-  return account;
-}
-
 function message(error: unknown): Error {
-  if (error instanceof AppwriteException) {
-    if (error.code === 401) return new Error("Wrong phone number or password, or your session has expired.");
-    return new Error(error.message);
-  }
   return error instanceof Error ? error : new Error("Appwrite request failed");
 }
 
 async function jwt(): Promise<string> {
-  try {
-    return (await getAccount().createJWT()).jwt;
-  } catch (error) {
-    if (error instanceof AppwriteException && error.code === 401) clearSession();
-    throw message(error);
-  }
+  const token = getSession()?.token;
+  if (!token) throw new Error("Please sign in again.");
+  return token;
 }
 
 export const phoneEmail = (phone: string) => `${phone.replace(/\D/g, "")}@phone.agtrack.app`;
@@ -101,10 +86,7 @@ export const appwriteApi = {
   auth: {
     async login(phone: string, password: string): Promise<{ token: string; user: User }> {
       try {
-        if (getSession()) await getAccount().deleteSession("current").catch(() => undefined);
-        const session = await getAccount().createEmailPasswordSession(phoneEmail(phone), password);
-        const user = await getAppwriteMe({ data: { jwt: await jwt() } });
-        return { token: session.$id, user };
+        return await loginAppwrite({ data: { phone, password } });
       } catch (error) {
         throw message(error);
       }
@@ -117,7 +99,7 @@ export const appwriteApi = {
       throw new Error("Phone-only accounts cannot receive email reset links. Ask your field agent or Ministry admin to reset your password.");
     },
     async changePassword(current: string, next: string): Promise<undefined> {
-      try { await getAccount().updatePassword(next, current); } catch (error) { throw message(error); }
+      try { await accountAppwrite({ data: { jwt: await jwt(), action: "password", current, next } }); } catch (error) { throw message(error); }
       return undefined;
     },
     async updateMe(data: Partial<User>): Promise<User> {
@@ -165,6 +147,7 @@ export const appwriteChat = {
 };
 
 export async function appwriteLogout(): Promise<void> {
-  if (USE_APPWRITE) await getAccount().deleteSession("current").catch(() => undefined);
+  const token = getSession()?.token;
+  if (USE_APPWRITE && token) await accountAppwrite({ data: { jwt: token, action: "logout" } }).catch(() => undefined);
   clearSession();
 }

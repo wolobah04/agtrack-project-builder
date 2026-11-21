@@ -55,3 +55,10 @@
 - [x] Send browser-fetched forecasts to the AI server function and verify the preview.
 - [x] Republish and verify live AI weather on `https://agtrack.online`.
 - [x] Remove the temporary farmer and chat records used for live domain verification.
+
+# Ministry user and batch search
+
+- [x] Add a polished global search with keyboard access and clear result states.
+- [x] Search users by name, phone, county, or role and open matching accounts in Management.
+- [x] Search harvest batch codes and open their public buyer traceability history.
+- [x] Add filtering to Management and test the search rules and signed-in flow.

@@ -32,12 +32,6 @@
 - [x] Republish with buyer QR codes pointed at the verified `https://agtrack.online` domain.
 - [x] Sweep all buyer QR, lookup, internal-link and database-read paths for login-free public batch history.
 
-# Chatbot live weather
-
-- [ ] Reproduce the missing-weather answer and identify whether Open-Meteo, prompt grounding, or response display is failing.
-- [ ] Fix the failing path and add regression coverage for live forecast data in assistant answers.
-- [ ] Verify a signed-in farmer receives current rain and watering guidance; clean up temporary test data.
-
 # Persistent login and authentication navigation
 
 - [x] Keep saved sessions across refreshes until explicit sign-out and hide guest links for active users.

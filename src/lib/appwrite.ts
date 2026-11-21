@@ -1,5 +1,7 @@
 import { clearSession, getSession } from "./auth";
 import { batchCode } from "./mock-db";
+import { questionCounty } from "./farm-assistant";
+import { getForecast } from "./weather";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import {
   appwriteChatHistory,
@@ -136,7 +138,11 @@ export const appwriteApi = {
 
 export const appwriteAssistant = {
   async ask(message: string, history: { role: "user" | "bot"; text: string }[]) {
-    return askFarmAssistant({ data: { jwt: await jwt(), message, history } });
+    const token = await jwt();
+    const county = questionCounty(message, getSession()?.user.county ?? "Montserrado");
+    // Browser requests avoid the shared server-IP rate limit that can block Open-Meteo on Workers.
+    const forecast = await getForecast(county).catch(() => null);
+    return askFarmAssistant({ data: { jwt: token, message, history, forecast } });
   },
 };
 

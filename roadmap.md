@@ -43,5 +43,7 @@
 - [x] Reproduce the missing forecast in the published AI chat while the Weather page succeeds.
 - [x] Identify AgTrack's Open-Meteo server requests and preserve provider errors for diagnostics.
 - [x] Verify the preview AI answers with live Bomi rain probability and expected rainfall.
-- [ ] Publish and verify on `https://agtrack.online` (waiting for publication approval).
-- [x] Remove the temporary farmer and chat records used for domain verification.
+- [x] Publish the request-header fix and identify the remaining production `429` server-IP rate limit.
+- [x] Send browser-fetched forecasts to the AI server function and verify the preview.
+- [ ] Republish and verify live AI weather on `https://agtrack.online`.
+- [ ] Remove the temporary farmer and chat records used for live domain verification.

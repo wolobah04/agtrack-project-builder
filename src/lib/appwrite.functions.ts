@@ -344,10 +344,16 @@ export const getAppwriteBatchHistory = createServerFn({ method: "POST" })
     };
   });
 
+const forecastInput = z.object({
+  current: z.object({ temperature: z.number(), humidity: z.number(), wind: z.number(), code: z.number(), rain: z.number() }),
+  daily: z.array(z.object({ date: dateField, max: z.number(), min: z.number(), rain: z.number(), rainChance: z.number(), code: z.number() })).max(16),
+});
+
 const assistantInput = z.object({
   jwt: z.string().min(1),
   message: z.string().trim().min(1).max(500),
   history: z.array(z.object({ role: z.enum(["user", "bot"]), text: z.string().trim().min(1).max(4000) })).max(12).default([]),
+  forecast: forecastInput.nullable().optional(),
 });
 
 type GroqResponse = { choices?: { message?: { content?: string } }[]; error?: { message?: string; code?: string } };
@@ -362,7 +368,8 @@ export const askFarmAssistant = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("The AI assistant is not connected yet. Please contact the administrator.");
 
     const weatherCounty = questionCounty(data.message, actor.county);
-    const weatherRequest = getForecast(weatherCounty).catch((error) => {
+    // Current browsers supply the forecast directly. Keep the server fetch only for older clients.
+    const weatherRequest = data.forecast !== undefined ? Promise.resolve(data.forecast) : getForecast(weatherCounty).catch((error) => {
       console.error("Open-Meteo request failed for the farm assistant", error instanceof Error ? error.message : "unknown error");
       return null;
     });

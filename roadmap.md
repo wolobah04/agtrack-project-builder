@@ -76,3 +76,9 @@
 - [x] Suggest the ending date from the crop's harvest window and keep it editable.
 - [x] Show the ending date and time remaining on the calendar page.
 - [x] Test the date rules, saving, and cleanup of temporary records.
+
+# Ministry farmer verification
+
+- [x] Store farmer verification separately from account activation and quality score.
+- [x] Add Ministry-only verification toggles and a live farmer dashboard badge.
+- [x] Test permissions and verify Ministry approval and farmer read-back using temporary accounts.

@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Wheat, Wallet, TrendingDown, Award, Plus, CloudSun, QrCode } from "lucide-react";
+import { Wheat, Wallet, TrendingDown, Award, Plus, CloudSun, QrCode, BadgeCheck, Clock3 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Panel, StatCard, Loading, Empty, ErrorState } from "@/components/agtrack/ui";
 import { FormDialog, useDialog } from "@/components/agtrack/FormDialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useFarmScore } from "@/hooks/use-score";
 import { useInvalidate } from "@/hooks/use-farm-data";
 import { useSession } from "@/hooks/use-session";
@@ -13,10 +14,18 @@ import { fmtDate, fmtLRD } from "@/lib/constants";
 import { harvestFields, d0, toHarvest } from "@/lib/forms";
 import { getForecast, describe } from "@/lib/weather";
 
-export const Route = createFileRoute("/farmer/")({ component: Overview });
+export const Route = createFileRoute("/farmer/")({
+  head: () => ({ meta: [
+    { title: "Farm overview — AgTrack" }, { name: "description", content: "Your farm records, quality score and Ministry account verification." },
+    { property: "og:title", content: "Farm overview — AgTrack" }, { property: "og:description", content: "Your farm records and Ministry verification status in AgTrack." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
+  ] }),
+  component: Overview,
+});
 
 function Overview() {
   const s = useSession(); const inv = useInvalidate(); const dlg = useDialog();
+  const profile = useQuery({ queryKey: ["farmer-profile", s?.user.id], queryFn: api.auth.me, enabled: Boolean(s), staleTime: 0, refetchInterval: 30_000 });
   const { score, loading, error, harvests, expenses, losses, traces } = useFarmScore();
   const wx = useQuery({ queryKey: ["wx", s?.user.county], queryFn: () => getForecast(s!.user.county), enabled: !!s, staleTime: 30 * 60e3 });
   const sum = (a: { [k: string]: any }[], k: string) => a.reduce((t, x) => t + x[k], 0);
@@ -25,6 +34,13 @@ function Overview() {
   return (
     <>
       <PageHeader title="Overview" subtitle={`${s?.user.farm_type ?? ""} farm · ${s?.user.county ?? ""} County`} action={<Button variant="hero" onClick={() => dlg.show()}><Plus />Log harvest</Button>} />
+      <div className="mb-5 flex flex-wrap items-center gap-3" aria-live="polite">
+        <span className="font-semibold">{profile.data?.name ?? s?.user.name}</span>
+        {profile.data && !profile.isError ? <Badge variant={profile.data.verified ? "default" : "secondary"} className="gap-1.5 px-3 py-1">
+          {profile.data.verified ? <BadgeCheck className="size-4" /> : <Clock3 className="size-4" />}
+          {profile.data.verified ? "Ministry Verified" : "Pending Ministry Verification"}
+        </Badge> : <span className="text-sm text-muted-foreground">{profile.isError ? "Verification status unavailable" : "Checking verification…"}</span>}
+      </div>
       {loading ? <Loading rows={4} /> : error ? <ErrorState text="Could not load all your farm records. Please try again." /> : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

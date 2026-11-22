@@ -38,7 +38,7 @@ const date = string("date", 10);
 const schema = [
   {
     id: "users", name: "User profiles",
-    columns: [string("name", 128), string("phone", 20), string("county", 80), string("farm_type", 80), boolean("active", true, true), string("agent_id", 36, false), string("email", 254, false)],
+    columns: [string("name", 128), string("phone", 20), string("county", 80), string("farm_type", 80), boolean("active", true, true), { ...boolean("verified", false), default: false }, string("agent_id", 36, false), string("email", 254, false)],
     indexes: [index("phone_unique", ["phone"], TablesDBIndexType.Unique), index("agent_id_key", ["agent_id"])],
   },
   {
@@ -150,7 +150,7 @@ for (const table of schema) {
       if (column.type === "string") return tables.createStringColumn({ ...args, size: column.size });
       if (column.type === "float") return tables.createFloatColumn({ ...args, min: column.min });
       if (column.type === "integer") return tables.createIntegerColumn({ ...args, min: column.min });
-      if (column.type === "boolean") return tables.createBooleanColumn(args);
+      if (column.type === "boolean") return tables.createBooleanColumn({ ...args, ...(column.default !== undefined ? { default: column.default } : {}) });
       if (column.type === "datetime") return tables.createDatetimeColumn(args);
       throw new Error(`Unsupported column type ${column.type}`);
     });

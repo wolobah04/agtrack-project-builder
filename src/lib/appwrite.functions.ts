@@ -3,6 +3,7 @@ import { Query } from "appwrite";
 import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
+import { DEFAULT_FARMER_VERIFIED, farmerVerificationPatch } from "./farmer-verification";
 import { buildGroqMessages, cleanAssistantReply, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
 import type { CropActivity, CropSeason, Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
@@ -11,7 +12,7 @@ import { approvedBatchActivities, completionExpense, completionUpdate, nextRecur
 const PROJECT_FALLBACK = "6b011308003b57f341b6";
 type Config = { endpoint: string; projectId: string; apiKey: string; databaseId: string };
 type Row = { $id: string; $createdAt: string; [key: string]: any };
-type Actor = AppwriteActor & { name: string; phone: string; county: string; farm_type: string; created_at: string; agent_id?: string; email?: string };
+type Actor = AppwriteActor & { name: string; phone: string; county: string; farm_type: string; verified: boolean; created_at: string; agent_id?: string; email?: string };
 
 class HttpError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -95,6 +96,7 @@ function toUser(profile: Row | { id: string; created_at: string; [key: string]: 
   return {
     id: profile.id, name: String(profile["name"]), phone: String(profile["phone"]), county: String(profile["county"]),
     farm_type: String(profile["farm_type"]), role: roleRow["role"] as Role, active: profile["active"] !== false,
+    verified: profile["verified"] === true,
     created_at: String(profile.created_at), ...(profile["agent_id"] ? { agent_id: String(profile["agent_id"]) } : {}),
     ...(profile["email"] ? { email: String(profile["email"]) } : {}),
   };
@@ -139,7 +141,7 @@ async function createAccount(config: Config, input: { phone: string; name: strin
   try {
     const profile = await createRow(config, "users", auth.$id, {
       name: input.name, phone: input.phone, county: input.county, farm_type: input.farm_type,
-      active: true, ...(input.agent_id ? { agent_id: input.agent_id } : {}), email: phoneEmail(input.phone),
+      active: true, verified: DEFAULT_FARMER_VERIFIED, ...(input.agent_id ? { agent_id: input.agent_id } : {}), email: phoneEmail(input.phone),
     });
     await createRow(config, "user_roles", auth.$id, { user_id: auth.$id, role: input.role });
     await request(config, `/users/${auth.$id}/prefs`, { method: "PATCH", body: { prefs: { name: input.name, phone: input.phone, county: input.county, farm_type: input.farm_type, role: input.role, ...(input.agent_id ? { agent_id: input.agent_id } : {}) } } }).catch(() => undefined);
@@ -248,7 +250,7 @@ export const mutateAppwriteRecord = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const manageInput = z.object({ jwt: z.string(), action: z.enum(["list", "updateMe", "update", "remove", "createAdmin"]), id: z.string().optional(), data: z.record(z.string(), z.unknown()).optional() });
+const manageInput = z.object({ jwt: z.string(), action: z.enum(["list", "updateMe", "update", "remove", "createAdmin", "verify"]), id: z.string().optional(), data: z.record(z.string(), z.unknown()).optional() });
 const profileFields = z.object({ name: z.string().trim().min(2).max(80).optional(), county: z.enum(COUNTY_NAMES as [string, ...string[]]).optional(), farm_type: z.enum(FARM_TYPES as [string, ...string[]]).optional() });
 const adminFields = z.object({ name: z.string().trim().min(2).max(80), phone: z.string().regex(LIBERIA_PHONE), password: z.string().min(8).max(72) });
 
@@ -287,6 +289,13 @@ export const manageAppwriteUsers = createServerFn({ method: "POST" })
     if (data.id === actor.id) throw new HttpError("You cannot deactivate or delete your own account here", 400);
     const profile = await getRow(config, "users", data.id);
     const role = await getRow(config, "user_roles", data.id);
+    if (data.action === "verify") {
+      const verified = z.boolean().parse(data.data?.["verified"]);
+      const patch = farmerVerificationPatch(actor, role["role"] as Role, verified);
+      const updated = await updateRow(config, "users", data.id, patch);
+      await audit(config, actor.name, `${verified ? "Verified farmer" : "Removed farmer verification"}: ${profile["name"]}`);
+      return toUser(updated, fromRow(role));
+    }
     if (data.action === "update") {
       const active = typeof data.data?.["active"] === "boolean" ? data.data["active"] : undefined;
       const clean = profileFields.parse(data.data ?? {});

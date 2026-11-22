@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserPlus, Ban, CheckCircle2, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Panel } from "@/components/agtrack/ui";
@@ -8,6 +8,7 @@ import { FormDialog, useDialog } from "@/components/agtrack/FormDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { LIBERIA_PHONE, fmtDate, normalizePhone } from "@/lib/constants";
@@ -18,6 +19,13 @@ import type { Role } from "@/lib/types";
 interface ManagementSearch { role: Role; q: string }
 
 export const Route = createFileRoute("/admin/management")({
+  head: () => ({ meta: [
+    { title: "Account management — AgTrack Ministry" },
+    { name: "description", content: "Manage AgTrack farmer accounts and Ministry verification." },
+    { property: "og:title", content: "Account management — AgTrack Ministry" },
+    { property: "og:description", content: "Manage farmer accounts and Ministry verification in AgTrack." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
+  ] }),
   validateSearch: (search: Record<string, unknown>): ManagementSearch => ({
     role: search["role"] === "agent" || search["role"] === "admin" ? search["role"] : "farmer",
     q: typeof search["q"] === "string" ? search["q"] : "",
@@ -34,6 +42,15 @@ function Mgmt() {
   const navigate = useNavigate({ from: "/admin/management" });
   const setSearch = (role: Role, query: string) => navigate({ replace: true, search: { role, q: query } });
   const refresh = () => { qc.invalidateQueries({ queryKey: ["users"] }); qc.invalidateQueries({ queryKey: ["audit"] }); qc.invalidateQueries({ queryKey: ["national"] }); };
+  const verification = useMutation({
+    mutationFn: ({ id, verified }: { id: string; verified: boolean }) => api.users.setVerification(id, verified),
+    onSuccess: (user) => {
+      qc.setQueryData<import("@/lib/types").User[]>(["users"], (users) => users?.map((row) => row.id === user.id ? user : row));
+      toast.success(user.verified ? `${user.name} is Ministry verified` : `Verification removed for ${user.name}`);
+      refresh();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not update verification"),
+  });
   const rows = (q.data ?? []).filter((user) => user.role === search.role && userMatchesQuery(user, search.q));
   const roleLabel = search.role === "agent" ? "agents" : search.role === "admin" ? "admins" : "farmers";
 
@@ -59,6 +76,10 @@ function Mgmt() {
       <Panel><RecordTable rows={rows} loading={q.isLoading} error={q.isError} empty={search.q ? `No ${roleLabel} match “${search.q}”.` : `No ${roleLabel} found.`} cols={[
         { h: "Name", c: (r) => <b>{r.name}</b> }, { h: "Phone", c: (r) => r.phone }, { h: "County", c: (r) => r.county }, { h: "Joined", c: (r) => fmtDate(r.created_at) },
         { h: "Status", c: (r) => r.active ? <Badge>Active</Badge> : <Badge variant="secondary">Deactivated</Badge> },
+        ...(search.role === "farmer" ? [{ h: "Verification", c: (r: import("@/lib/types").User) => <div className="flex items-center gap-2 whitespace-nowrap">
+          <Switch checked={r.verified === true} disabled={verification.isPending} aria-label={`Ministry verification for ${r.name}`} onCheckedChange={(verified) => verification.mutate({ id: r.id, verified })} />
+          <span className={r.verified ? "text-sm font-medium text-primary" : "text-sm text-muted-foreground"}>{r.verified ? "Verified" : "Pending"}</span>
+        </div> }] : []),
         { h: "", right: true, c: (r) => r.id === me?.user.id ? null : <div className="flex justify-end gap-1">
           <Button size="icon" variant="ghost" aria-label={r.active ? "Deactivate" : "Activate"} onClick={async () => { await api.users.update(r.id, { active: !r.active }); toast.success(r.active ? "Deactivated" : "Activated"); refresh(); }}>{r.active ? <Ban /> : <CheckCircle2 />}</Button>
           <Button size="icon" variant="ghost" aria-label="Delete" onClick={async () => { if (confirm(`Delete ${r.name}?`)) { await api.users.remove(r.id); toast.success("Deleted"); refresh(); } }}><Trash2 /></Button></div> }]} /></Panel>

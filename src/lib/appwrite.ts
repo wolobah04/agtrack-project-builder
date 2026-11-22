@@ -11,6 +11,7 @@ import {
   appwriteNationalData,
   getAppwriteAuditLog,
   getAppwriteBatchHistory,
+  getAppwriteMe,
   accountAppwrite,
   loginAppwrite,
   manageAppwriteUsers,
@@ -102,6 +103,9 @@ export const appwriteApi = {
     return getAppwriteBatchHistory({ data: { code } });
   },
   auth: {
+    async me(): Promise<User> {
+      return getAppwriteMe({ data: { jwt: await jwt() } });
+    },
     async login(phone: string, password: string): Promise<{ token: string; user: User }> {
       try {
         return await loginAppwrite({ data: { phone, password } });
@@ -125,6 +129,9 @@ export const appwriteApi = {
     },
   },
   users: {
+    async setVerification(id: string, verified: boolean): Promise<User> {
+      return manageAppwriteUsers({ data: { jwt: await jwt(), action: "verify", id, data: { verified } } }) as Promise<User>;
+    },
     async list(): Promise<User[]> {
       return manageAppwriteUsers({ data: { jwt: await jwt(), action: "list" } }) as Promise<User[]>;
     },

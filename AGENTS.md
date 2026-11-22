@@ -36,3 +36,4 @@ use the editor.
 - The live farm assistant calls Groq from an authenticated server function and supplies browser-fetched Open-Meteo weather plus owner-scoped Appwrite records as context, avoiding shared Worker-IP weather rate limits; `GROQ_API_KEY` stays server-only, while `src/lib/assistant.ts` remains only the browser-demo fallback.
 - USSD is a simulator plus the placeholder in `src/lib/ussd.ts` until a telecom gateway is connected.
 - Speech transcription uses an awaited submission callback into the existing chat send flow, allowing voice requests through the transcribing state without permitting concurrent manual sends.
+- Farmer verification uses a dedicated Ministry-authorized action, not profile edits; the farmer dashboard reads fresh account data so approval is independent of cached sessions, activation and quality scores.

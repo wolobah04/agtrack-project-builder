@@ -82,3 +82,9 @@
 - [x] Store farmer verification separately from account activation and quality score.
 - [x] Add Ministry-only verification toggles and a live farmer dashboard badge.
 - [x] Test permissions and verify Ministry approval and farmer read-back using temporary accounts.
+
+# Agent verification and complete demo data
+
+- [x] Allow Ministry admins to verify or unverify field agents and show the agent's live status.
+- [x] Add an idempotent demo loader covering all 13 Appwrite tables with linked, realistic records.
+- [x] Run the loader, confirm every table has records, and test verification and demo sign-in flows.

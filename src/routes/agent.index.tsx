@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Search, UserPlus, ClipboardEdit, Users, Wheat, FileText, Award, CloudSun, Droplets } from "lucide-react";
+import { Search, UserPlus, ClipboardEdit, Users, Wheat, FileText, Award, CloudSun, Droplets, BadgeCheck, Clock3 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Panel, StatCard, Loading, Empty, ErrorState } from "@/components/agtrack/ui";
 import { Button } from "@/components/ui/button";
@@ -9,15 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAgentCohort } from "@/hooks/use-agent-cohort";
+import { api } from "@/lib/api";
 import { fmtDate } from "@/lib/constants";
 import { describe, farmTips, getForecast } from "@/lib/weather";
 
 export const Route = createFileRoute("/agent/")({
   head: () => ({ meta: [
     { title: "Field Operations — AgTrack Agent" },
-    { name: "description", content: "Field agent overview of registered farmers, harvests, records, quality scores and local weather." },
+    { name: "description", content: "Field agent overview of registered farmers, harvests, records, quality scores, local weather and Ministry verification." },
     { property: "og:title", content: "Field Operations — AgTrack Agent" },
-    { property: "og:description", content: "Track your farmers' harvests, records and quality scores in one place." },
+    { property: "og:description", content: "Track your farmers' harvests, records, quality scores and Ministry verification in one place." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
   ] }),
   component: AgentOverview,
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/agent/")({
 
 function AgentOverview() {
   const { session: s, summaries, loading, error } = useAgentCohort();
+  const profile = useQuery({ queryKey: ["profile"], queryFn: api.auth.me, enabled: !!s });
   const [q, setQ] = useState(""); const [county, setCounty] = useState("all");
   const wx = useQuery({ queryKey: ["wx", s?.user.county], queryFn: () => getForecast(s!.user.county), enabled: !!s, staleTime: 30 * 60e3 });
   const totalKg = summaries.reduce((t, f) => t + f.harvests.reduce((a, h) => a + h.quantity_kg, 0), 0);
@@ -38,7 +40,13 @@ function AgentOverview() {
   const today = wx.data?.daily[0];
   return (
     <>
-      <PageHeader title="Field Operations" subtitle={`${s?.user.county ?? ""} County · farmers you support`} action={<Button asChild variant="hero"><Link to="/agent/register"><UserPlus />Register</Link></Button>} />
+      <PageHeader title="Field Operations" subtitle={`${s?.user.county ?? ""} County · farmers you support`} action={<div className="flex flex-wrap items-center justify-end gap-2">
+        {profile.data && <Badge variant={profile.data.verified ? "default" : "secondary"} className="gap-1.5 px-3 py-2">
+          {profile.data.verified ? <BadgeCheck className="size-4" /> : <Clock3 className="size-4" />}
+          {profile.data.verified ? "Ministry Verified" : "Pending Ministry Verification"}
+        </Badge>}
+        <Button asChild variant="hero"><Link to="/agent/register"><UserPlus />Register</Link></Button>
+      </div>} />
       {error ? <ErrorState text="Could not load all your farmers' records. Please try again." /> : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

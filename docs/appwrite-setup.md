@@ -51,7 +51,19 @@ The script is idempotent: you can safely run it again. It creates the database, 
 
 All application tables deny direct browser writes. TanStack server functions validate the Appwrite session JWT, check the separate role record and farmer assignment, then use the server key. Public batch lookup returns only the batch's crop, county, grade, safe trace stages, and farmer-approved completed crop activities dated on or before the batch harvest. Planned, overdue and skipped work always remains private.
 
-## 4. Sign in
+## 4. Load optional demonstration data
+
+After creating the schema, run:
+
+```sh
+bun run appwrite:seed
+```
+
+The loader adds two sample field agents and four sample farmers, then fills all 13 tables with linked harvests, batches, seasons, activities, expenses, losses, inventory, traces, reports, chat history, notifications and audit entries. It uses deterministic IDs and is safe to re-run: existing demo rows are not changed or duplicated, and non-demo records are untouched.
+
+Newly created sample accounts use the password `AgTrackDemo2026!`. Their phone numbers are printed by the loader. Sample agents include one verified and one pending account so both Ministry states can be tested. Change or remove demonstration accounts before using the system for real operations.
+
+## 5. Sign in
 
 AgTrack keeps its phone-number sign-in interface. Internally, each phone maps to a private synthetic Appwrite email such as `231770000003@phone.agtrack.app`; users never need to enter that email.
 

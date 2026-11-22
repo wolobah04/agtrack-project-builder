@@ -21,9 +21,9 @@ interface ManagementSearch { role: Role; q: string }
 export const Route = createFileRoute("/admin/management")({
   head: () => ({ meta: [
     { title: "Account management — AgTrack Ministry" },
-    { name: "description", content: "Manage AgTrack farmer accounts and Ministry verification." },
+    { name: "description", content: "Manage AgTrack farmer and agent accounts and Ministry verification." },
     { property: "og:title", content: "Account management — AgTrack Ministry" },
-    { property: "og:description", content: "Manage farmer accounts and Ministry verification in AgTrack." },
+    { property: "og:description", content: "Manage farmer and agent accounts and Ministry verification in AgTrack." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" },
   ] }),
   validateSearch: (search: Record<string, unknown>): ManagementSearch => ({
@@ -76,7 +76,7 @@ function Mgmt() {
       <Panel><RecordTable rows={rows} loading={q.isLoading} error={q.isError} empty={search.q ? `No ${roleLabel} match “${search.q}”.` : `No ${roleLabel} found.`} cols={[
         { h: "Name", c: (r) => <b>{r.name}</b> }, { h: "Phone", c: (r) => r.phone }, { h: "County", c: (r) => r.county }, { h: "Joined", c: (r) => fmtDate(r.created_at) },
         { h: "Status", c: (r) => r.active ? <Badge>Active</Badge> : <Badge variant="secondary">Deactivated</Badge> },
-        ...(search.role === "farmer" ? [{ h: "Verification", c: (r: import("@/lib/types").User) => <div className="flex items-center gap-2 whitespace-nowrap">
+        ...(search.role !== "admin" ? [{ h: "Verification", c: (r: import("@/lib/types").User) => <div className="flex items-center gap-2 whitespace-nowrap">
           <Switch checked={r.verified === true} disabled={verification.isPending} aria-label={`Ministry verification for ${r.name}`} onCheckedChange={(verified) => verification.mutate({ id: r.id, verified })} />
           <span className={r.verified ? "text-sm font-medium text-primary" : "text-sm text-muted-foreground"}>{r.verified ? "Verified" : "Pending"}</span>
         </div> }] : []),

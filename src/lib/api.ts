@@ -7,7 +7,7 @@ import { clearSession, getSession } from "./auth";
 import { appwriteApi, USE_APPWRITE } from "./appwrite";
 import { approvedBatchActivities, type CropCalendarApi } from "./crop-calendar";
 import { mockCropCalendar } from "./crop-calendar-mock";
-import { DEFAULT_FARMER_VERIFIED, farmerVerificationPatch } from "./farmer-verification";
+import { DEFAULT_ACCOUNT_VERIFIED, accountVerificationPatch } from "./farmer-verification";
 import { batchCode, db, save, uid, type MockDB } from "./mock-db";
 import type { AuditLog, Expense, FarmReport, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 
@@ -145,7 +145,7 @@ const restApi = {
       if (!USE_MOCK) return http<User>(d.role === "farmer" ? "/farmers/signup" : "/users/signup", { method: "POST", body: JSON.stringify(d) });
       await wait(500);
       if (db().users.some((x) => x.phone === d.phone)) throw new ApiError("This phone number is already registered");
-      const u = { ...d, id: uid(), active: true, verified: DEFAULT_FARMER_VERIFIED, created_at: new Date().toISOString() };
+      const u = { ...d, id: uid(), active: true, verified: DEFAULT_ACCOUNT_VERIFIED, created_at: new Date().toISOString() };
       db().users.push(u); audit(d.agent_id ? `Registered farmer ${d.name}` : `New ${d.role} sign-up: ${d.name}`); save();
       const { password: _p, ...user } = u; return user;
     },
@@ -163,12 +163,12 @@ const restApi = {
   },
   users: {
     async setVerification(id: string, verified: boolean): Promise<User> {
-      if (!USE_MOCK) throw new ApiError("Farmer verification requires the Appwrite connection.");
+      if (!USE_MOCK) throw new ApiError("Account verification requires the Appwrite connection.");
       const actor = db().users.find((u) => u.id === getSession()?.user.id);
       const target = db().users.find((u) => u.id === id);
       if (!actor || !target) throw new ApiError("Account not found", 404);
-      Object.assign(target, farmerVerificationPatch(actor, target.role, verified));
-      audit(`${verified ? "Verified farmer" : "Removed farmer verification"}: ${target.name}`);
+      Object.assign(target, accountVerificationPatch(actor, target.role, verified));
+      audit(`${verified ? `Verified ${target.role}` : `Removed ${target.role} verification`}: ${target.name}`);
       save();
       const { password: _password, ...profile } = target;
       return profile;

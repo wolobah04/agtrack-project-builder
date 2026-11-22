@@ -3,7 +3,7 @@ import { Query } from "appwrite";
 import { z } from "zod";
 import { canAccessFarmer, canManageUsers, canReadAudit, canRegisterForAgent, type AppwriteActor } from "./appwrite-access";
 import { COUNTY_NAMES, FARM_TYPES, LIBERIA_PHONE } from "./constants";
-import { DEFAULT_FARMER_VERIFIED, farmerVerificationPatch } from "./farmer-verification";
+import { DEFAULT_ACCOUNT_VERIFIED, accountVerificationPatch } from "./farmer-verification";
 import { buildGroqMessages, cleanAssistantReply, buildSystemPrompt, GROQ_MODEL, questionCounty } from "./farm-assistant";
 import type { CropActivity, CropSeason, Expense, Harvest, InventoryTx, LossRecord, Role, Trace, User } from "./types";
 import { getForecast } from "./weather";
@@ -141,7 +141,7 @@ async function createAccount(config: Config, input: { phone: string; name: strin
   try {
     const profile = await createRow(config, "users", auth.$id, {
       name: input.name, phone: input.phone, county: input.county, farm_type: input.farm_type,
-      active: true, verified: DEFAULT_FARMER_VERIFIED, ...(input.agent_id ? { agent_id: input.agent_id } : {}), email: phoneEmail(input.phone),
+      active: true, verified: DEFAULT_ACCOUNT_VERIFIED, ...(input.agent_id ? { agent_id: input.agent_id } : {}), email: phoneEmail(input.phone),
     });
     await createRow(config, "user_roles", auth.$id, { user_id: auth.$id, role: input.role });
     await request(config, `/users/${auth.$id}/prefs`, { method: "PATCH", body: { prefs: { name: input.name, phone: input.phone, county: input.county, farm_type: input.farm_type, role: input.role, ...(input.agent_id ? { agent_id: input.agent_id } : {}) } } }).catch(() => undefined);
@@ -291,9 +291,10 @@ export const manageAppwriteUsers = createServerFn({ method: "POST" })
     const role = await getRow(config, "user_roles", data.id);
     if (data.action === "verify") {
       const verified = z.boolean().parse(data.data?.["verified"]);
-      const patch = farmerVerificationPatch(actor, role["role"] as Role, verified);
+      const targetRole = role["role"] as Role;
+      const patch = accountVerificationPatch(actor, targetRole, verified);
       const updated = await updateRow(config, "users", data.id, patch);
-      await audit(config, actor.name, `${verified ? "Verified farmer" : "Removed farmer verification"}: ${profile["name"]}`);
+      await audit(config, actor.name, `${verified ? `Verified ${targetRole}` : `Removed ${targetRole} verification`}: ${profile["name"]}`);
       return toUser(updated, fromRow(role));
     }
     if (data.action === "update") {
